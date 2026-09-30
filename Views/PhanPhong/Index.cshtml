@@ -1,0 +1,8 @@
+@model List<QuanLyKyTucXa_UNETIxx_xxx.Models.DangKyKTX>
+@using QuanLyKyTucXa_UNETIxx_xxx.Models
+@{ ViewData["Title"] = "Duyệt và phân phòng"; var phongs = (List<PhongKTX>)ViewBag.Phongs; }
+<h2>DUYỆT VÀ PHÂN PHÒNG</h2>
+<table class="table table-bordered align-middle"><thead><tr><th>Sinh viên</th><th>Loại mong muốn</th><th>Ngày đăng ký</th><th>Phòng</th><th>Thao tác</th></tr></thead><tbody>
+@foreach(var x in Model){<tr><td>@x.SinhVien?.MaSV - @x.SinhVien?.HoTen</td><td>@x.LoaiPhong?.TenLoai</td><td>@x.NgayDangKy.ToString("dd/MM/yyyy")</td><td><form asp-action="Assign" method="post" class="d-flex gap-2">@Html.AntiForgeryToken()<input type="hidden" name="dangKyId" value="@x.Id"/><select name="phongId" class="form-select">@foreach(var p in phongs.Where(p => p.LoaiPhongId == x.LoaiPhongId)){<option value="@p.Id">@p.ToaNha - @p.SoPhong</option>}</select><button class="btn btn-success">Phân</button></form></td><td><form asp-action="Reject" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@x.Id"/><button class="btn btn-outline-danger">Từ chối</button></form></td></tr>}
+</tbody></table>
+@if(!Model.Any()){<div class="alert alert-info">Không có đơn đang chờ duyệt.</div>}

@@ -1,0 +1,56 @@
+@model QuanLyKyTucXa_UNETIxx_xxx.ViewModels.LoginViewModel
+@{ ViewData["Title"] = "Đăng nhập"; }
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-brand">
+            <div class="login-logo">🏢</div>
+            <div>
+                <div class="login-brand-title">Ký Túc Xá UNETI</div>
+                <div class="login-brand-subtitle">HỆ THỐNG QUẢN LÝ KÝ TÚC XÁ</div>
+            </div>
+        </div>
+
+        <div class="login-heading">
+            <h1>Đăng nhập</h1>
+            <p>Đăng nhập để sử dụng hệ thống quản lý ký túc xá</p>
+        </div>
+
+        <form asp-action="Login" method="post" class="login-form">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="login-error"></div>
+
+            <div class="login-field">
+                <label asp-for="TenDangNhap">Tên đăng nhập</label>
+                <div class="login-input-wrap">
+                    <span class="login-input-icon">👤</span>
+                    <input asp-for="TenDangNhap" placeholder="Nhập tên đăng nhập" autocomplete="username" autofocus />
+                </div>
+                <span asp-validation-for="TenDangNhap" class="field-error"></span>
+            </div>
+
+            <div class="login-field">
+                <label asp-for="MatKhau">Mật khẩu</label>
+                <div class="login-input-wrap">
+                    <span class="login-input-icon">🔒</span>
+                    <input asp-for="MatKhau" type="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
+                </div>
+                <span asp-validation-for="MatKhau" class="field-error"></span>
+            </div>
+
+            <button type="submit" class="login-button">Đăng nhập</button>
+        </form>
+
+        <div class="login-demo">
+            <div class="login-demo-title">Tài khoản mẫu</div>
+            <div><b>Admin:</b> admin / Admin@123</div>
+            <div><b>Sinh viên:</b> sv001 / 123456</div>
+        </div>
+
+        <div class="login-footer">© 2026 Ký Túc Xá UNETI</div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

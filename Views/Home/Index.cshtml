@@ -1,0 +1,2 @@
+@{ ViewData["Title"] = "Trang chủ"; }
+<div class="text-center py-5"><h1>QUẢN LÝ KÝ TÚC XÁ UNETI</h1><p class="lead">Hệ thống quản lý phòng, sinh viên, đăng ký và phân phòng.</p>@if(Context.Session.GetInt32("UserId") == null){<a asp-controller="Account" asp-action="Login" class="btn btn-primary">Đăng nhập</a>}</div>

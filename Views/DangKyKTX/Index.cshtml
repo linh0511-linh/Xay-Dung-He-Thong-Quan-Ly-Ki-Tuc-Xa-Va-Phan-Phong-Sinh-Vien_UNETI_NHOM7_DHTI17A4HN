@@ -1,0 +1,144 @@
+@model List<QuanLyKyTucXa_UNETIxx_xxx.Models.DangKyKTX>
+@using QuanLyKyTucXa_UNETIxx_xxx.Models
+@{
+    ViewData["Title"] = "Trang chủ sinh viên";
+    var sv = (SinhVien)ViewBag.SinhVien;
+    var phongDangO = (PhanPhong?)ViewBag.PhongDangO;
+    var loaiPhongs = (List<LoaiPhong>)ViewBag.LoaiPhongs;
+    var choDuyet = Model.Count(x => x.TrangThai == "ChoDuyet");
+    var daDuyet = Model.Count(x => x.TrangThai == "DaDuyet");
+}
+
+<div class="student-heading">
+    <div>
+        <div class="student-eyebrow">CỔNG SINH VIÊN KÝ TÚC XÁ</div>
+        <h1>Xin chào, @sv.HoTen 👋</h1>
+        <p>Quản lý đăng ký và thông tin phòng ở của bạn tại ký túc xá UNETI.</p>
+    </div>
+    <div class="student-id-card">
+        <div class="student-avatar">@sv.HoTen.Substring(0, 1).ToUpper()</div>
+        <div><b>@sv.MaSV</b><span>Sinh viên</span></div>
+    </div>
+</div>
+
+<div class="student-stat-grid">
+    <div class="student-stat-card blue">
+        <div class="student-stat-icon">🏠</div>
+        <div><span>Phòng hiện tại</span><strong>@(phongDangO?.PhongKTX?.SoPhong ?? "Chưa có")</strong></div>
+    </div>
+    <div class="student-stat-card green">
+        <div class="student-stat-icon">✓</div>
+        <div><span>Đơn đã duyệt</span><strong>@daDuyet</strong></div>
+    </div>
+    <div class="student-stat-card orange">
+        <div class="student-stat-icon">⏳</div>
+        <div><span>Đang chờ duyệt</span><strong>@choDuyet</strong></div>
+    </div>
+    <div class="student-stat-card purple">
+        <div class="student-stat-icon">▤</div>
+        <div><span>Tổng đơn đăng ký</span><strong>@Model.Count</strong></div>
+    </div>
+</div>
+
+@if (TempData["Msg"] != null)
+{
+    <div class="student-alert success">✓ <span>@TempData["Msg"]</span></div>
+}
+@if (TempData["Err"] != null)
+{
+    <div class="student-alert danger">! <span>@TempData["Err"]</span></div>
+}
+
+<div class="student-columns">
+    <section class="student-panel registration-panel" id="registration">
+        <div class="student-panel-title">
+            <div>
+                <h2>Đăng ký ký túc xá</h2>
+                <p>Chọn loại phòng phù hợp với nhu cầu của bạn.</p>
+            </div>
+            <span class="panel-icon">🏢</span>
+        </div>
+
+        @if (phongDangO != null)
+        {
+            <div class="current-room-card">
+                <div class="room-check">✓</div>
+                <div class="room-info">
+                    <span>Phòng đang ở</span>
+                    <strong>@phongDangO.PhongKTX?.SoPhong</strong>
+                    <small>Tòa @phongDangO.PhongKTX?.ToaNha · @phongDangO.PhongKTX?.LoaiPhong?.TenLoai</small>
+                </div>
+                <div class="room-status">Đang ở</div>
+            </div>
+        }
+        else
+        {
+            <form asp-action="Create" method="post" class="student-register-form">
+                @Html.AntiForgeryToken()
+                <div class="student-form-group">
+                    <label>Loại phòng muốn đăng ký</label>
+                    <select name="loaiPhongId" required>
+                        <option value="">-- Chọn loại phòng --</option>
+                        @foreach (var lp in loaiPhongs)
+                        {
+                            <option value="@lp.Id">@lp.TenLoai · @lp.SucChua người · @lp.GiaThang.ToString("N0") đ/tháng</option>
+                        }
+                    </select>
+                </div>
+                <div class="student-form-group">
+                    <label>Ghi chú <span>(không bắt buộc)</span></label>
+                    <textarea name="ghiChu" rows="3" placeholder="Ví dụ: Mong muốn ở cùng bạn..." maxlength="500"></textarea>
+                </div>
+                <button type="submit" class="student-primary-btn">Gửi đăng ký <span>→</span></button>
+            </form>
+        }
+    </section>
+
+    <section class="student-panel profile-panel">
+        <div class="student-panel-title">
+            <div><h2>Thông tin sinh viên</h2><p>Thông tin tài khoản của bạn.</p></div>
+            <span class="panel-icon">🎓</span>
+        </div>
+        <div class="student-info-list">
+            <div><span>Mã sinh viên</span><b>@sv.MaSV</b></div>
+            <div><span>Họ và tên</span><b>@sv.HoTen</b></div>
+            <div><span>Giới tính</span><b>@sv.GioiTinh</b></div>
+            <div><span>Email</span><b>@(sv.Email ?? "Chưa cập nhật")</b></div>
+            <div><span>Số điện thoại</span><b>@(sv.SoDienThoai ?? "Chưa cập nhật")</b></div>
+        </div>
+    </section>
+</div>
+
+<section class="student-panel history-panel" id="history">
+    <div class="student-panel-title">
+        <div><h2>Lịch sử đăng ký</h2><p>Theo dõi các đơn đăng ký KTX của bạn.</p></div>
+        <span class="history-count">@Model.Count đơn</span>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="student-empty"><div>📋</div><b>Chưa có đơn đăng ký</b><span>Hãy chọn loại phòng và gửi đăng ký ở phía trên.</span></div>
+    }
+    else
+    {
+        <div class="student-table-wrap">
+            <table class="student-table">
+                <thead><tr><th>Ngày đăng ký</th><th>Loại phòng</th><th>Giá/tháng</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+                <tbody>
+                @foreach (var x in Model)
+                {
+                    var statusClass = x.TrangThai == "DaDuyet" ? "approved" : x.TrangThai == "TuChoi" ? "rejected" : "pending";
+                    var statusText = x.TrangThai == "DaDuyet" ? "Đã duyệt" : x.TrangThai == "TuChoi" ? "Từ chối" : "Chờ duyệt";
+                    <tr>
+                        <td>@x.NgayDangKy.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td><b>@x.LoaiPhong?.TenLoai</b></td>
+                        <td>@(x.LoaiPhong?.GiaThang.ToString("N0") ?? "-") đ</td>
+                        <td><span class="student-status @statusClass">@statusText</span></td>
+                        <td>@(string.IsNullOrWhiteSpace(x.GhiChu) ? "-" : x.GhiChu)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

@@ -1,0 +1,4 @@
+@model List<QuanLyKyTucXa_UNETIxx_xxx.Models.TaiKhoan>
+@{ ViewData["Title"]="Tài khoản"; }
+<div class="page-head"><div><h1>Quản lý tài khoản</h1><p>Quản lý tài khoản và vai trò trong hệ thống.</p></div></div>
+<div class="panel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tên đăng nhập</th><th>Vai trò</th><th>Sinh viên liên kết</th><th>Trạng thái</th></tr></thead><tbody>@foreach(var x in Model){<tr><td><b>@x.TenDangNhap</b></td><td><span class="role-pill @(x.VaiTro=="Admin"?"admin":"student")">@x.VaiTro</span></td><td>@(x.SinhVien==null?"—":$"{x.SinhVien.MaSV} - {x.SinhVien.HoTen}")</td><td><span class="active-pill">Hoạt động</span></td></tr>}</tbody></table></div></div>

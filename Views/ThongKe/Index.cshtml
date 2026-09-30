@@ -1,0 +1,61 @@
+@model QuanLyKyTucXa_UNETIxx_xxx.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan";
+    var maxChart = Math.Max(1, Model.DangKy6Thang.Any() ? Model.DangKy6Thang.Max(x => x.Value) : 1);
+}
+<div class="dashboard-heading">
+    <div>
+        <h1>Tổng quan hệ thống</h1>
+        <p>Theo dõi nhanh tình trạng ký túc xá</p>
+    </div>
+</div>
+
+<div class="stat-grid">
+    <div class="stat-card"><div class="stat-icon blue">🎓</div><div><span>Tổng sinh viên</span><strong>@Model.TongSinhVien.ToString("N0")</strong></div></div>
+    <div class="stat-card"><div class="stat-icon purple">🏢</div><div><span>Tổng phòng</span><strong>@Model.TongPhong.ToString("N0")</strong></div></div>
+    <div class="stat-card"><div class="stat-icon violet">👥</div><div><span>Đang ở</span><strong>@Model.DangO.ToString("N0")</strong></div></div>
+    <div class="stat-card"><div class="stat-icon green">🛏</div><div><span>Còn trống</span><strong>@Model.ConTrong.ToString("N0")</strong></div></div>
+</div>
+
+<div class="dashboard-columns">
+    <section class="panel chart-panel">
+        <div class="panel-title"><h2>Đăng ký 6 tháng gần đây</h2><a asp-controller="PhanPhong" asp-action="Index">Xem đơn →</a></div>
+        <div class="chart-area">
+            @foreach (var item in Model.DangKy6Thang)
+            {
+                var height = item.Value == 0 ? 4 : Math.Max(12, item.Value * 170 / maxChart);
+                <div class="chart-column"><div class="chart-value">@item.Value</div><div class="bar" style="height:@(height)px"></div><div class="chart-label">@item.Label</div></div>
+            }
+        </div>
+    </section>
+
+    <section class="panel notice-panel">
+        <div class="panel-title"><h2>Thông báo mới nhất</h2></div>
+        <div class="notice-list">
+            <a asp-controller="PhanPhong" asp-action="Index" class="notice-item"><i class="notice-dot red"></i><span><b>@Model.DangChoDuyet</b> đơn đăng ký đang chờ duyệt</span></a>
+            <a asp-controller="PhongKTX" asp-action="Index" class="notice-item"><i class="notice-dot green"></i><span><b>@Model.ConTrong</b> chỗ ở còn trống</span></a>
+            <a asp-controller="ChuyenPhong" asp-action="Index" class="notice-item"><i class="notice-dot orange"></i><span>Quản lý các yêu cầu chuyển phòng</span></a>
+            <a asp-controller="TraPhong" asp-action="Index" class="notice-item"><i class="notice-dot blue"></i><span>Danh sách sinh viên đang ở: <b>@Model.DangO</b></span></a>
+        </div>
+    </section>
+</div>
+
+<div class="quick-grid">
+    <a asp-controller="TaiKhoan" asp-action="Index" class="quick-card"><span>👥</span><div><b>Tài khoản</b><small>@Model.TongTaiKhoan tài khoản</small></div></a>
+    <a asp-controller="LoaiPhong" asp-action="Index" class="quick-card"><span>▤</span><div><b>Loại phòng</b><small>@Model.TongLoaiPhong loại phòng</small></div></a>
+    <a asp-controller="PhongKTX" asp-action="Index" class="quick-card"><span>🏢</span><div><b>Phòng KTX</b><small>@Model.TongPhong phòng</small></div></a>
+    <a asp-controller="SinhVien" asp-action="Index" class="quick-card"><span>🎓</span><div><b>Sinh viên</b><small>@Model.TongSinhVien sinh viên</small></div></a>
+</div>
+
+@if (Model.TheoToa.Any())
+{
+    <section class="panel mt-4">
+        <div class="panel-title"><h2>Sinh viên đang ở theo tòa</h2></div>
+        <div class="building-list">
+            @foreach (var item in Model.TheoToa)
+            {
+                <div class="building-row"><span>Tòa @item.Toa</span><div class="progress"><div class="progress-bar" style="width:@Math.Min(100, item.SoNguoi * 100 / Math.Max(1, Model.DangO))%"></div></div><b>@item.SoNguoi</b></div>
+            }
+        </div>
+    </section>
+}

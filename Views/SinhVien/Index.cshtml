@@ -1,0 +1,4 @@
+@model List<QuanLyKyTucXa_UNETIxx_xxx.Models.SinhVien>
+@{ ViewData["Title"]="Sinh viên"; }
+<div class="page-head"><div><h1>Quản lý sinh viên</h1><p>Danh sách sinh viên và tình trạng ở ký túc xá.</p></div></div>
+<div class="panel"><form class="search-row" method="get"><input name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm mã sinh viên hoặc họ tên..."/><button class="btn btn-primary">Tìm kiếm</button></form><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mã SV</th><th>Họ tên</th><th>Giới tính</th><th>Email</th><th>Phòng hiện tại</th><th>Tài khoản</th></tr></thead><tbody>@foreach(var x in Model){var o=x.PhanPhongs.FirstOrDefault(p=>p.NgayRa==null);<tr><td><b>@x.MaSV</b></td><td>@x.HoTen</td><td>@x.GioiTinh</td><td>@x.Email</td><td>@(o?.PhongKTX==null?"Chưa phân":$"Tòa {o.PhongKTX.ToaNha} - {o.PhongKTX.SoPhong}")</td><td>@x.TaiKhoan?.TenDangNhap</td></tr>}</tbody></table></div></div>

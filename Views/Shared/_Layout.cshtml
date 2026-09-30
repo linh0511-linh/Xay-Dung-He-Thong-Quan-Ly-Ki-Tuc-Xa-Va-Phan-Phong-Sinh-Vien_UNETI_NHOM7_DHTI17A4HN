@@ -1,0 +1,104 @@
+@using Microsoft.AspNetCore.Http
+@{
+    var isLoggedIn = Context.Session.GetInt32("UserId") != null;
+    var role = Context.Session.GetString("Role");
+    var isAdmin = role == "Admin";
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Ký Túc Xá UNETI</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+@if (isLoggedIn && isAdmin)
+{
+    <div class="admin-shell">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="brand">
+                <div class="brand-icon">🏢</div>
+                <div><div class="brand-title">Ký Túc Xá</div><div class="brand-subtitle">UNETI ADMIN</div></div>
+            </div>
+
+            <nav class="admin-nav">
+                <div class="nav-section">QUẢN LÝ</div>
+                <a class="admin-nav-link @(currentController == "ThongKe" ? "active" : "")" asp-controller="ThongKe" asp-action="Index"><span>⌂</span> Tổng quan</a>
+                <a class="admin-nav-link @(currentController == "TaiKhoan" ? "active" : "")" asp-controller="TaiKhoan" asp-action="Index"><span>👥</span> Tài khoản</a>
+                <a class="admin-nav-link @(currentController == "LoaiPhong" ? "active" : "")" asp-controller="LoaiPhong" asp-action="Index"><span>▤</span> Loại phòng</a>
+                <a class="admin-nav-link @(currentController == "PhongKTX" ? "active" : "")" asp-controller="PhongKTX" asp-action="Index"><span>🏢</span> Phòng KTX</a>
+                <a class="admin-nav-link @(currentController == "SinhVien" ? "active" : "")" asp-controller="SinhVien" asp-action="Index"><span>🎓</span> Sinh viên</a>
+                <a class="admin-nav-link @(currentController == "DonDangKy" ? "active" : "")" asp-controller="DonDangKy" asp-action="Index"><span>▧</span> Đăng ký KTX</a>
+                <a class="admin-nav-link @(currentController == "PhanPhong" ? "active" : "")" asp-controller="PhanPhong" asp-action="Index"><span>⇄</span> Phân phòng</a>
+                <a class="admin-nav-link @(currentController == "ChuyenPhong" ? "active" : "")" asp-controller="ChuyenPhong" asp-action="Index"><span>↪</span> Chuyển phòng</a>
+                <a class="admin-nav-link @(currentController == "TraPhong" ? "active" : "")" asp-controller="TraPhong" asp-action="Index"><span>✓</span> Trả phòng</a>
+                <a class="admin-nav-link" asp-controller="ThongKe" asp-action="Index"><span>▥</span> Thống kê</a>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <div class="admin-badge"><span class="status-dot"></span><span>Đang đăng nhập Admin</span></div>
+                <a class="logout-link" asp-controller="Account" asp-action="Logout"><span>↪</span> Đăng xuất</a>
+            </div>
+        </aside>
+
+        <div class="admin-main">
+            <header class="admin-topbar">
+                <button class="menu-toggle" type="button" onclick="document.getElementById('adminSidebar').classList.toggle('collapsed'); document.getElementById('adminMain').classList.toggle('expanded');">☰</button>
+                <div class="topbar-spacer"></div>
+                <div class="topbar-notice">🔔</div>
+                <div class="admin-profile">
+                    <div class="avatar">A</div>
+                    <div><div class="profile-name">Nguyễn Văn A</div><div class="profile-role">Administrator</div></div>
+                </div>
+            </header>
+
+            <main class="admin-content" id="adminMain">
+                @if (TempData["Msg"] != null) { <div class="alert alert-success shadow-sm border-0">@TempData["Msg"]</div> }
+                @if (TempData["Err"] != null) { <div class="alert alert-danger shadow-sm border-0">@TempData["Err"]</div> }
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+}
+else if (isLoggedIn)
+{
+    <div class="student-shell">
+        <aside class="student-sidebar">
+            <div class="student-brand">
+                <div class="student-brand-icon">🏢</div>
+                <div><strong>Ký Túc Xá</strong><span>UNETI STUDENT</span></div>
+            </div>
+            <nav class="student-nav">
+                <div class="student-nav-label">CỔNG SINH VIÊN</div>
+                <a class="student-nav-link @(currentController == "DangKyKTX" ? "active" : "")" asp-controller="DangKyKTX" asp-action="Index"><span>⌂</span> Trang chủ</a>
+                <a class="student-nav-link" href="#registration"><span>▧</span> Đăng ký KTX</a>
+                <a class="student-nav-link" href="#history"><span>◷</span> Lịch sử đăng ký</a>
+            </nav>
+            <div class="student-side-bottom">
+                <div class="student-user-mini"><div class="student-mini-avatar">@((Context.Session.GetString("UserName") ?? "S").Substring(0,1).ToUpper())</div><div><b>@Context.Session.GetString("UserName")</b><span>Sinh viên</span></div></div>
+                <a class="student-logout" asp-controller="Account" asp-action="Logout">↪ &nbsp; Đăng xuất</a>
+            </div>
+        </aside>
+        <div class="student-main">
+            <header class="student-topbar">
+                <div><span class="student-topbar-title">Cổng sinh viên</span><span class="student-topbar-sub">Quản lý ký túc xá</span></div>
+                <div class="student-topbar-right"><span class="student-bell">🔔</span><div class="student-top-user"><b>@Context.Session.GetString("UserName")</b><span>Sinh viên</span></div><a class="student-top-logout" asp-controller="Account" asp-action="Logout">Đăng xuất</a></div>
+            </header>
+            <main class="student-content">@RenderBody()</main>
+        </div>
+    </div>
+}
+else
+{
+    <main class="auth-page">
+        @RenderBody()
+    </main>
+}
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
