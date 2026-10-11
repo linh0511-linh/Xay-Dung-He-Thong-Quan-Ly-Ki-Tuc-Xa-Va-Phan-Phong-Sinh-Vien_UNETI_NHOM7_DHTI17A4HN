@@ -36,7 +36,44 @@ public class PhongKTXController : Controller
             Phongs = await q.Skip((page - 1) * PageSize).Take(PageSize).ToListAsync(),
             LoaiPhongs = await _db.LoaiPhongs.OrderBy(x => x.TenLoai).ToListAsync()
         };
+
+        // Thống kê toàn bộ phòng đang hoạt động, không chỉ trang hiện tại/bộ lọc.
+        var phongHoatDong = await _db.PhongKTXs
+            .Where(p => p.DangHoatDong)
+            .Select(p => new
+            {
+                p.Id,
+                SucChua = p.LoaiPhong != null ? p.LoaiPhong.SucChua : 0,
+                SoNguoiDangO = p.PhanPhongs.Count(pp => pp.NgayRa == null)
+            })
+            .ToListAsync();
+
+        ViewBag.TongPhongHoatDong = phongHoatDong.Count;
+        ViewBag.SoPhongTrong = phongHoatDong.Count(p => p.SoNguoiDangO == 0);
+        ViewBag.SoPhongConCho = phongHoatDong.Count(p => p.SucChua > p.SoNguoiDangO);
+        ViewBag.TongGiuongConTrong = phongHoatDong.Sum(p => Math.Max(0, p.SucChua - p.SoNguoiDangO));
+
         return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Students(int id)
+    {
+        var room = await _db.PhongKTXs
+            .Include(p => p.LoaiPhong)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (room == null) return NotFound();
+
+        ViewBag.Phong = room;
+        ViewBag.SucChua = room.LoaiPhong?.SucChua ?? 0;
+        ViewBag.SoNguoiDangO = await _db.PhanPhongs.CountAsync(p => p.PhongKTXId == id && p.NgayRa == null);
+
+        var students = await _db.PhanPhongs
+            .Include(p => p.SinhVien)
+            .Where(p => p.PhongKTXId == id && p.NgayRa == null)
+            .OrderBy(p => p.SinhVien!.MaSV)
+            .ToListAsync();
+        return View(students);
     }
 
     [HttpGet]
