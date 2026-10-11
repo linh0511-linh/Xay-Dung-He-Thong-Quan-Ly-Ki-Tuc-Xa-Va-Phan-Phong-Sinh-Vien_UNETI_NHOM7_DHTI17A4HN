@@ -1,10 +1,19 @@
 @using Microsoft.AspNetCore.Http
+@using Microsoft.EntityFrameworkCore
+@using QuanLyKyTucXa_UNETIxx_xxx.Data
+@inject KtxDbContext KtxDb
 @{
     var isLoggedIn = Context.Session.GetInt32("UserId") != null;
     var role = Context.Session.GetString("Role");
     var isAdmin = role == "Admin";
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    var pendingStudentNotifications = isAdmin ? await KtxDb.SinhViens.CountAsync(s => !s.DangKys.Any() && !s.PhanPhongs.Any(p => p.NgayRa == null)) : 0;
+    var pendingRegistrationNotifications = isAdmin ? await KtxDb.DangKyKTXs.CountAsync(x => x.TrangThai == "ChoDuyet") : 0;
+    var pendingAssignmentNotifications = isAdmin ? await KtxDb.DangKyKTXs.CountAsync(x => x.TrangThai == "ChoDuyet" && KtxDb.PhongKTXs.Any(p => p.DangHoatDong && p.LoaiPhongId == x.LoaiPhongId && KtxDb.PhanPhongs.Count(pp => pp.PhongKTXId == p.Id && pp.NgayRa == null) < KtxDb.LoaiPhongs.Where(lp => lp.Id == p.LoaiPhongId).Select(lp => lp.SucChua).FirstOrDefault())) : 0;
+    var pendingTransferNotifications = isAdmin ? await KtxDb.YeuCauChuyenPhongs.CountAsync(x => x.TrangThai == "ChoDuyet") : 0;
+    var pendingReturnNotifications = isAdmin ? await KtxDb.DangKyKTXs.CountAsync(x => x.TrangThai == "YeuCauTra") : 0;
+    var totalNotifications = pendingStudentNotifications + pendingRegistrationNotifications + pendingAssignmentNotifications + pendingTransferNotifications + pendingReturnNotifications;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -27,16 +36,17 @@
 
             <nav class="admin-nav">
                 <div class="nav-section">QUẢN LÝ</div>
-                <a class="admin-nav-link @(currentController == "ThongKe" ? "active" : "")" asp-controller="ThongKe" asp-action="Index"><span>⌂</span> Tổng quan</a>
-                <a class="admin-nav-link @(currentController == "TaiKhoan" ? "active" : "")" asp-controller="TaiKhoan" asp-action="Index"><span>👥</span> Tài khoản</a>
-                <a class="admin-nav-link @(currentController == "LoaiPhong" ? "active" : "")" asp-controller="LoaiPhong" asp-action="Index"><span>▤</span> Loại phòng</a>
-                <a class="admin-nav-link @(currentController == "PhongKTX" ? "active" : "")" asp-controller="PhongKTX" asp-action="Index"><span>🏢</span> Phòng KTX</a>
-                <a class="admin-nav-link @(currentController == "SinhVien" ? "active" : "")" asp-controller="SinhVien" asp-action="Index"><span>🎓</span> Sinh viên</a>
-                <a class="admin-nav-link @(currentController == "DonDangKy" ? "active" : "")" asp-controller="DonDangKy" asp-action="Index"><span>▧</span> Đăng ký KTX</a>
-                <a class="admin-nav-link @(currentController == "PhanPhong" ? "active" : "")" asp-controller="PhanPhong" asp-action="Index"><span>⇄</span> Phân phòng</a>
-                <a class="admin-nav-link @(currentController == "ChuyenPhong" ? "active" : "")" asp-controller="ChuyenPhong" asp-action="Index"><span>↪</span> Chuyển phòng</a>
-                <a class="admin-nav-link @(currentController == "TraPhong" ? "active" : "")" asp-controller="TraPhong" asp-action="Index"><span>✓</span> Trả phòng</a>
-                <a class="admin-nav-link" asp-controller="ThongKe" asp-action="Index"><span>▥</span> Thống kê</a>
+                <a class="admin-nav-link @(currentController == "TaiKhoan" ? "active" : "")" asp-controller="TaiKhoan" asp-action="Index"><span class="nav-icon">👥</span><span class="nav-link-text">Tài khoản</span></a>
+                <a class="admin-nav-link @(currentController == "SinhVien" ? "active" : "")" asp-controller="SinhVien" asp-action="Index"><span class="nav-icon">🎓</span><span class="nav-link-text">Sinh viên</span>@if (pendingStudentNotifications > 0) { <b class="notification-badge">@pendingStudentNotifications</b> }</a>
+                <a class="admin-nav-link @(currentController == "LoaiPhong" ? "active" : "")" asp-controller="LoaiPhong" asp-action="Index"><span class="nav-icon">▤</span><span class="nav-link-text">Loại phòng</span></a>
+                <a class="admin-nav-link @(currentController == "PhongKTX" ? "active" : "")" asp-controller="PhongKTX" asp-action="Index"><span class="nav-icon">🏢</span><span class="nav-link-text">Phòng KTX</span></a>
+
+                <div class="nav-section nav-section-spaced">YÊU CẦU &amp; XỬ LÝ</div>
+                <a class="admin-nav-link @(currentController == "DonDangKy" ? "active" : "")" asp-controller="DonDangKy" asp-action="Index"><span class="nav-icon">▧</span><span class="nav-link-text">Đăng ký KTX</span>@if (pendingRegistrationNotifications > 0) { <b class="notification-badge">@pendingRegistrationNotifications</b> }</a>
+                <a class="admin-nav-link @(currentController == "PhanPhong" ? "active" : "")" asp-controller="PhanPhong" asp-action="Index"><span class="nav-icon">⇄</span><span class="nav-link-text">Phân phòng</span>@if (pendingAssignmentNotifications > 0) { <b class="notification-badge">@pendingAssignmentNotifications</b> }</a>
+                <a class="admin-nav-link @(currentController == "ChuyenPhong" ? "active" : "")" asp-controller="ChuyenPhong" asp-action="Index"><span class="nav-icon">↪</span><span class="nav-link-text">Chuyển phòng</span>@if (pendingTransferNotifications > 0) { <b class="notification-badge">@pendingTransferNotifications</b> }</a>
+                <a class="admin-nav-link @(currentController == "TraPhong" ? "active" : "")" asp-controller="TraPhong" asp-action="Index"><span class="nav-icon">✓</span><span class="nav-link-text">Trả phòng</span>@if (pendingReturnNotifications > 0) { <b class="notification-badge">@pendingReturnNotifications</b> }</a>
+
             </nav>
 
             <div class="sidebar-bottom">
@@ -49,7 +59,24 @@
             <header class="admin-topbar">
                 <button class="menu-toggle" type="button" onclick="document.getElementById('adminSidebar').classList.toggle('collapsed'); document.getElementById('adminMain').classList.toggle('expanded');">☰</button>
                 <div class="topbar-spacer"></div>
-                <div class="topbar-notice">🔔</div>
+                <div class="topbar-notice-wrap">
+                    <button type="button" class="topbar-notice" id="notificationBell" aria-label="Thông báo">🔔 @if (totalNotifications > 0) { <span class="topbar-notice-badge">@totalNotifications</span> }</button>
+                    <div class="notification-panel" id="notificationPanel">
+                        <div class="notification-panel-head"><strong>Thông báo</strong><span>@totalNotifications mục cần xử lý</span></div>
+                        @if (totalNotifications > 0)
+                        {
+                            @if (pendingStudentNotifications > 0) { <a class="notification-item" asp-controller="SinhVien" asp-action="Index"><span class="notification-icon">🎓</span><span><b>Sinh viên mới</b><small>Có @pendingStudentNotifications sinh viên mới/chưa đăng ký KTX.</small></span></a> }
+                            @if (pendingRegistrationNotifications > 0) { <a class="notification-item" asp-controller="DonDangKy" asp-action="Index" asp-route-status="ChoDuyet"><span class="notification-icon">▧</span><span><b>Đơn đăng ký KTX</b><small>Có @pendingRegistrationNotifications đơn đang chờ duyệt.</small></span></a> }
+                            @if (pendingAssignmentNotifications > 0) { <a class="notification-item" asp-controller="PhanPhong" asp-action="Index"><span class="notification-icon">⇄</span><span><b>Phân phòng</b><small>Có @pendingAssignmentNotifications đăng ký cần phân phòng.</small></span></a> }
+                            @if (pendingTransferNotifications > 0) { <a class="notification-item" asp-controller="ChuyenPhong" asp-action="Index"><span class="notification-icon">↪</span><span><b>Chuyển phòng</b><small>Có @pendingTransferNotifications yêu cầu đang chờ duyệt.</small></span></a> }
+                            @if (pendingReturnNotifications > 0) { <a class="notification-item" asp-controller="TraPhong" asp-action="Index"><span class="notification-icon">✓</span><span><b>Trả phòng</b><small>Có @pendingReturnNotifications yêu cầu trả phòng.</small></span></a> }
+                        }
+                        else
+                        {
+                            <div class="notification-empty">✓ Không có thông báo mới</div>
+                        }
+                    </div>
+                </div>
                 <div class="admin-profile">
                     <div class="avatar">A</div>
                     <div><div class="profile-name">Nguyễn Văn A</div><div class="profile-role">Administrator</div></div>
@@ -77,6 +104,8 @@ else if (isLoggedIn)
                 <a class="student-nav-link @(currentController == "DangKyKTX" ? "active" : "")" asp-controller="DangKyKTX" asp-action="Index"><span>⌂</span> Trang chủ</a>
                 <a class="student-nav-link" href="#registration"><span>▧</span> Đăng ký KTX</a>
                 <a class="student-nav-link" href="#history"><span>◷</span> Lịch sử đăng ký</a>
+                <a class="student-nav-link" href="#stay-history"><span>🏠</span> Lịch sử ở KTX</a>
+                <a class="student-nav-link @(currentController == "StudentChuyenPhong" ? "active" : "")" asp-controller="StudentChuyenPhong" asp-action="Index"><span>🔄</span> Đăng ký chuyển phòng</a>
             </nav>
             <div class="student-side-bottom">
                 <div class="student-user-mini"><div class="student-mini-avatar">@((Context.Session.GetString("UserName") ?? "S").Substring(0,1).ToUpper())</div><div><b>@Context.Session.GetString("UserName")</b><span>Sinh viên</span></div></div>
@@ -99,6 +128,15 @@ else
     </main>
 }
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    const bell = document.getElementById("notificationBell");
+    const panel = document.getElementById("notificationPanel");
+    if (!bell || !panel) return;
+    bell.addEventListener("click", function (e) { e.stopPropagation(); panel.classList.toggle("show"); });
+    document.addEventListener("click", function (e) { if (!panel.contains(e.target) && !bell.contains(e.target)) panel.classList.remove("show"); });
+})();
+</script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

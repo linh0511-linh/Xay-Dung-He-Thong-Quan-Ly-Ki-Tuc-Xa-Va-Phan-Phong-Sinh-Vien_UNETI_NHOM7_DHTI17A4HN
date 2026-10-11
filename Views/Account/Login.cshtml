@@ -41,6 +41,10 @@
             <button type="submit" class="login-button">Đăng nhập</button>
         </form>
 
+        <div class="login-register-link">
+            Chưa có tài khoản? <a asp-action="Register">ĐĂNG KÝ NGAY</a>
+        </div>
+
         <div class="login-demo">
             <div class="login-demo-title">Tài khoản mẫu</div>
             <div><b>Admin:</b> admin / Admin@123</div>
@@ -50,6 +54,10 @@
         <div class="login-footer">© 2026 Ký Túc Xá UNETI</div>
     </div>
 </div>
+
+<style>
+.login-register-link{text-align:center;margin:18px 0 4px;color:#7a879b;font-size:14px}.login-register-link a{color:#e53935;font-weight:800;text-decoration:none}.login-register-link a:hover{text-decoration:underline}
+</style>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

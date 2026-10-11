@@ -5,6 +5,14 @@
     var sv = (SinhVien)ViewBag.SinhVien;
     var phongDangO = (PhanPhong?)ViewBag.PhongDangO;
     var loaiPhongs = (List<LoaiPhong>)ViewBag.LoaiPhongs;
+    var dangKyHienTai = (DangKyKTX?)ViewBag.DangKyHienTai;
+    var lichSuO = (List<PhanPhong>?)ViewBag.LichSuO ?? new List<PhanPhong>();
+    var donChoDuyet = Model.FirstOrDefault(x => x.TrangThai == "ChoDuyet");
+    var avatar = string.IsNullOrWhiteSpace(sv?.HoTen) ? "S" : sv.HoTen.Trim().Substring(0, 1).ToUpper();
+    var ngayBatDauMacDinh = DateTime.Today.ToString("yyyy-MM-dd");
+    var ngayKetThucMacDinh = DateTime.Today.AddMonths(4).ToString("yyyy-MM-dd");
+    var ngayKetThucMin = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd");
+    var ngayKetThucHienTai = dangKyHienTai == null ? "-" : dangKyHienTai.NgayKetThucDuKien.ToString("dd/MM/yyyy");
     var choDuyet = Model.Count(x => x.TrangThai == "ChoDuyet");
     var daDuyet = Model.Count(x => x.TrangThai == "DaDuyet");
 }
@@ -16,7 +24,7 @@
         <p>Quản lý đăng ký và thông tin phòng ở của bạn tại ký túc xá UNETI.</p>
     </div>
     <div class="student-id-card">
-        <div class="student-avatar">@sv.HoTen.Substring(0, 1).ToUpper()</div>
+        <div class="student-avatar">@avatar</div>
         <div><b>@sv.MaSV</b><span>Sinh viên</span></div>
     </div>
 </div>
@@ -48,6 +56,29 @@
 {
     <div class="student-alert danger">! <span>@TempData["Err"]</span></div>
 }
+@foreach (var deXuat in Model.Where(x => x.TrangThai == "ChoXacNhanPhanPhong"))
+{
+    var moTaDeXuat = deXuat.GhiChu ?? "Nhà trường có đề xuất phòng thay thế cho bạn.";
+    <div class="student-alert" style="background:#fff7ed;border:1px solid #fdba74;color:#9a3412;padding:20px;border-radius:12px;margin:16px 0;">
+        <h3 style="margin-top:0;">📣 Xác nhận phòng do nhà trường phân</h3>
+        <p>Phòng bạn đăng ký đã đủ chỗ nên nhà trường đề xuất phòng khác. Bạn có thể đăng ký phòng khác hoặc ở phòng do trường phân. Nếu đồng ý, vui lòng ấn <b>Xác nhận đồng ý</b> bên dưới.</p>
+        <p><b>Thông tin đề xuất:</b> @moTaDeXuat.Substring(moTaDeXuat.IndexOf(';') >= 0 ? moTaDeXuat.IndexOf(';') + 1 : 0)</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <form asp-controller="DangKyKTX" asp-action="ConfirmAutoRoom" method="post" onsubmit="return confirm('Bạn xác nhận đồng ý ở phòng do nhà trường phân?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="dangKyId" value="@deXuat.Id" />
+                <input type="hidden" name="accept" value="true" />
+                <button type="submit" class="student-primary-btn">Xác nhận đồng ý</button>
+            </form>
+            <form asp-controller="DangKyKTX" asp-action="ConfirmAutoRoom" method="post" onsubmit="return confirm('Bạn không đồng ý phòng đề xuất và muốn đăng ký phòng khác?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="dangKyId" value="@deXuat.Id" />
+                <input type="hidden" name="accept" value="false" />
+                <button type="submit" class="student-secondary-btn">Không đồng ý, đăng ký phòng khác</button>
+            </form>
+        </div>
+    </div>
+}
 
 <div class="student-columns">
     <section class="student-panel registration-panel" id="registration">
@@ -59,6 +90,14 @@
             <span class="panel-icon">🏢</span>
         </div>
 
+        @if (donChoDuyet != null)
+        {
+            <div class="pending-registration-card">
+                <div><b>Đăng ký đang chờ duyệt</b><span>@donChoDuyet.LoaiPhong?.TenLoai · Bắt đầu @donChoDuyet.NgayBatDau.ToString("dd/MM/yyyy") · Kết thúc dự kiến @donChoDuyet.NgayKetThucDuKien.ToString("dd/MM/yyyy")</span></div>
+                <span class="student-status pending">Chờ duyệt</span>
+            </div>
+        }
+
         @if (phongDangO != null)
         {
             <div class="current-room-card">
@@ -66,7 +105,8 @@
                 <div class="room-info">
                     <span>Phòng đang ở</span>
                     <strong>@phongDangO.PhongKTX?.SoPhong</strong>
-                    <small>Tòa @phongDangO.PhongKTX?.ToaNha · @phongDangO.PhongKTX?.LoaiPhong?.TenLoai</small>
+                    <small>Tòa @phongDangO.PhongKTX?.ToaNha · Tầng @phongDangO.PhongKTX?.Tang · @phongDangO.PhongKTX?.LoaiPhong?.TenLoai</small>
+                    <small>Ngày bắt đầu: @phongDangO.NgayVao.ToString("dd/MM/yyyy") · Kết thúc dự kiến: @ngayKetThucHienTai</small>
                 </div>
                 <div class="room-status">Đang ở</div>
             </div>
@@ -86,6 +126,14 @@
                     </select>
                 </div>
                 <div class="student-form-group">
+                    <label>Ngày bắt đầu <span>*</span></label>
+                    <input type="date" name="ngayBatDau" value="@ngayBatDauMacDinh" min="@ngayBatDauMacDinh" required />
+                </div>
+                <div class="student-form-group">
+                    <label>Ngày kết thúc dự kiến <span>*</span></label>
+                    <input type="date" name="ngayKetThucDuKien" value="@ngayKetThucMacDinh" min="@ngayKetThucMin" required />
+                </div>
+                <div class="student-form-group">
                     <label>Ghi chú <span>(không bắt buộc)</span></label>
                     <textarea name="ghiChu" rows="3" placeholder="Ví dụ: Mong muốn ở cùng bạn..." maxlength="500"></textarea>
                 </div>
@@ -102,11 +150,179 @@
         <div class="student-info-list">
             <div><span>Mã sinh viên</span><b>@sv.MaSV</b></div>
             <div><span>Họ và tên</span><b>@sv.HoTen</b></div>
+            <div><span>Ngày sinh</span><b>@sv.NgaySinh.ToString("dd/MM/yyyy")</b></div>
             <div><span>Giới tính</span><b>@sv.GioiTinh</b></div>
+            <div><span>Lớp</span><b>@(sv.Lop ?? "Chưa cập nhật")</b></div>
+            <div><span>Khoa</span><b>@(sv.Khoa ?? "Chưa cập nhật")</b></div>
             <div><span>Email</span><b>@(sv.Email ?? "Chưa cập nhật")</b></div>
             <div><span>Số điện thoại</span><b>@(sv.SoDienThoai ?? "Chưa cập nhật")</b></div>
+            <div><span>Địa chỉ</span><b>@(sv.DiaChi ?? "Chưa cập nhật")</b></div>
         </div>
+        @if (donChoDuyet != null)
+        {
+            <div class="student-info-pending">
+                <b>Đơn đang chờ duyệt</b>
+                <span>@donChoDuyet.LoaiPhong?.TenLoai · @donChoDuyet.NgayBatDau.ToString("dd/MM/yyyy") → @donChoDuyet.NgayKetThucDuKien.ToString("dd/MM/yyyy")</span>
+            </div>
+        }
+        <button type="button" class="student-primary-btn profile-update-btn" onclick="openProfileModal()">✎ Cập nhật thông tin</button>
     </section>
+</div>
+
+@if (phongDangO != null)
+{
+    var phongChuyenDen = (List<PhongKTX>)ViewBag.PhongChuyenDen;
+    var yeuCauChuyen = (YeuCauChuyenPhong?)ViewBag.YeuCauChuyenPhong;
+    <section class="student-panel transfer-panel" id="chuyen-phong">
+        <div class="student-panel-title">
+            <div><h2>Xin chuyển phòng</h2><p>Gửi yêu cầu để Admin xem xét chuyển bạn sang phòng khác.</p></div>
+            <span class="panel-icon">🔄</span>
+        </div>
+
+        @if (yeuCauChuyen?.TrangThai == "ChoDuyet")
+        {
+            <div class="transfer-request-card pending">
+                <div><b>Yêu cầu đang chờ duyệt</b><span>Phòng @yeuCauChuyen.PhongHienTai?.SoPhong → @yeuCauChuyen.PhongMuonDen?.SoPhong · @yeuCauChuyen.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")</span></div>
+                <span class="student-status pending">Chờ duyệt</span>
+            </div>
+        }
+        else
+        {
+            @if (yeuCauChuyen != null)
+            {
+                <div class="transfer-request-card @(yeuCauChuyen.TrangThai == "DaDuyet" ? "approved" : "rejected")">
+                    <div><b>Yêu cầu gần nhất</b><span>Phòng @yeuCauChuyen.PhongHienTai?.SoPhong → @yeuCauChuyen.PhongMuonDen?.SoPhong · @yeuCauChuyen.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")</span></div>
+                    <span class="student-status @(yeuCauChuyen.TrangThai == "DaDuyet" ? "approved" : "rejected")">@(yeuCauChuyen.TrangThai == "DaDuyet" ? "Đã duyệt" : "Từ chối")</span>
+                </div>
+            }
+            <button type="button" class="student-primary-btn transfer-open-btn" onclick="openTransferModal()">🔄 Xin chuyển phòng <span>→</span></button>
+
+            <div class="transfer-modal" id="transferModal" aria-hidden="true">
+                <div class="transfer-modal-backdrop" onclick="closeTransferModal()"></div>
+                <div class="transfer-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle">
+                    <div class="profile-modal-header">
+                        <div><h2 id="transferModalTitle">Xin chuyển phòng</h2><p>Chọn phòng mới và nhập lý do để gửi yêu cầu cho Admin.</p></div>
+                        <button type="button" class="profile-modal-close" onclick="closeTransferModal()">×</button>
+                    </div>
+                    <form asp-action="RequestMove" method="post" class="student-register-form transfer-form">
+                        @Html.AntiForgeryToken()
+                        <div class="profile-form-grid">
+                            <div class="student-form-group">
+                                <label>Phòng hiện tại</label>
+                                <input value="Tòa @phongDangO.PhongKTX?.ToaNha - Phòng @phongDangO.PhongKTX?.SoPhong" readonly />
+                            </div>
+                            <div class="student-form-group">
+                                <label>Phòng muốn chuyển đến <span>*</span></label>
+                                <select name="phongMuonDenId" required>
+                                    <option value="">-- Chọn phòng --</option>
+                                    @foreach (var room in phongChuyenDen)
+                                    {
+                                        <option value="@room.Id">Tòa @room.ToaNha - Phòng @room.SoPhong · @room.LoaiPhong?.TenLoai</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="student-form-group full-width">
+                                <label>Lý do chuyển phòng</label>
+                                <textarea name="lyDo" rows="4" maxlength="500" placeholder="Nhập lý do bạn muốn chuyển phòng..."></textarea>
+                            </div>
+                        </div>
+                        <div class="profile-form-actions">
+                            <button type="submit" class="student-primary-btn">Gửi yêu cầu chuyển phòng <span>→</span></button>
+                            <button type="button" class="student-secondary-btn" onclick="closeTransferModal()">Hủy</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </section>
+
+    var yeuCauTraPhong = Model.FirstOrDefault(x => x.TrangThai == "YeuCauTra");
+    <section class="student-panel return-panel" id="tra-phong">
+        <div class="student-panel-title">
+            <div><h2>Trả phòng</h2><p>Gửi yêu cầu trả phòng để Admin xác nhận và cập nhật chỗ ở.</p></div>
+            <span class="panel-icon">✓</span>
+        </div>
+        @if (yeuCauTraPhong != null)
+        {
+            <div class="transfer-request-card pending">
+                <div><b>Yêu cầu trả phòng đang chờ xử lý</b><span>Đã gửi ngày @yeuCauTraPhong.NgayDangKy.ToString("dd/MM/yyyy HH:mm")</span></div>
+                <span class="student-status pending">Chờ duyệt</span>
+            </div>
+        }
+        else
+        {
+            <div class="return-request-box">
+                <div><strong>Phòng hiện tại: @phongDangO.PhongKTX?.SoPhong</strong><span>Tòa @phongDangO.PhongKTX?.ToaNha · @phongDangO.PhongKTX?.LoaiPhong?.TenLoai</span></div>
+                <form asp-action="RequestReturn" method="post" onsubmit="return confirm('Bạn có chắc muốn gửi yêu cầu trả phòng?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="student-secondary-btn return-request-btn">✓ Xin trả phòng</button>
+                </form>
+            </div>
+        }
+    </section>
+}
+
+<div class="profile-modal" id="profileModal" aria-hidden="true">
+    <div class="profile-modal-backdrop" onclick="closeProfileModal()"></div>
+    <div class="profile-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
+        <div class="profile-modal-header">
+            <div><h2 id="profileModalTitle">Cập nhật thông tin sinh viên</h2><p>Chỉnh sửa thông tin cá nhân của bạn.</p></div>
+            <button type="button" class="profile-modal-close" onclick="closeProfileModal()">×</button>
+        </div>
+        <form asp-action="UpdateProfile" method="post" class="student-register-form">
+            @Html.AntiForgeryToken()
+            <div class="profile-form-grid">
+                <div class="student-form-group">
+                    <label>Mã sinh viên</label>
+                    <input value="@sv.MaSV" readonly />
+                    <small>Mã sinh viên không thể thay đổi.</small>
+                </div>
+                <div class="student-form-group">
+                    <label>Họ và tên <span>*</span></label>
+                    <input type="text" name="hoTen" value="@sv.HoTen" maxlength="100" required />
+                </div>
+                <div class="student-form-group">
+                    <label>Ngày sinh <span>*</span></label>
+                    <input type="date" name="ngaySinh" value="@sv.NgaySinh.ToString("yyyy-MM-dd")" required />
+                </div>
+                <div class="student-form-group">
+                    <label>Giới tính</label>
+                    <select name="gioiTinh">
+                        @if (sv.GioiTinh == "Nam")
+                        {
+                            <option value="Nam" selected>Nam</option>
+                        }
+                        else
+                        {
+                            <option value="Nam">Nam</option>
+                        }
+                        @if (sv.GioiTinh == "Nữ")
+                        {
+                            <option value="Nữ" selected>Nữ</option>
+                        }
+                        else
+                        {
+                            <option value="Nữ">Nữ</option>
+                        }
+                        @if (sv.GioiTinh == "Khác")
+                        {
+                            <option value="Khác" selected>Khác</option>
+                        }
+                        else
+                        {
+                            <option value="Khác">Khác</option>
+                        }
+                    </select>
+                </div>
+                <div class="student-form-group"><label>Lớp</label><input type="text" name="lop" value="@sv.Lop" maxlength="100" /></div>
+                <div class="student-form-group"><label>Khoa</label><input type="text" name="khoa" value="@sv.Khoa" maxlength="100" /></div>
+                <div class="student-form-group"><label>Số điện thoại</label><input type="tel" name="soDienThoai" value="@sv.SoDienThoai" maxlength="30" /></div>
+                <div class="student-form-group"><label>Email</label><input type="email" name="email" value="@sv.Email" maxlength="150" /></div>
+                <div class="student-form-group full-width"><label>Địa chỉ</label><textarea name="diaChi" rows="3" maxlength="250">@sv.DiaChi</textarea></div>
+            </div>
+            <div class="profile-form-actions"><button type="submit" class="student-primary-btn">Lưu thay đổi</button><button type="button" class="student-secondary-btn" onclick="closeProfileModal()">Hủy</button></div>
+        </form>
+    </div>
 </div>
 
 <section class="student-panel history-panel" id="history">
@@ -123,16 +339,18 @@
     {
         <div class="student-table-wrap">
             <table class="student-table">
-                <thead><tr><th>Ngày đăng ký</th><th>Loại phòng</th><th>Giá/tháng</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+                <thead><tr><th>Ngày đăng ký</th><th>Bắt đầu</th><th>Kết thúc dự kiến</th><th>Loại phòng</th><th>Giá/tháng</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
                 <tbody>
                 @foreach (var x in Model)
                 {
-                    var statusClass = x.TrangThai == "DaDuyet" ? "approved" : x.TrangThai == "TuChoi" ? "rejected" : "pending";
-                    var statusText = x.TrangThai == "DaDuyet" ? "Đã duyệt" : x.TrangThai == "TuChoi" ? "Từ chối" : "Chờ duyệt";
+                    var statusClass = x.TrangThai == "DaDuyet" ? "approved" : (x.TrangThai == "TuChoi" || x.TrangThai == "TuChoiPhanPhong") ? "rejected" : "pending";
+                    var statusText = x.TrangThai == "DaDuyet" ? "Đã duyệt" : x.TrangThai == "TuChoi" ? "Từ chối" : x.TrangThai == "ChoXacNhanPhanPhong" ? "Chờ xác nhận phòng" : x.TrangThai == "YeuCauTra" ? "Chờ trả phòng" : x.TrangThai == "DaTra" ? "Đã trả phòng" : "Chờ duyệt";
                     <tr>
                         <td>@x.NgayDangKy.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>@x.NgayBatDau.ToString("dd/MM/yyyy")</td>
+                        <td>@x.NgayKetThucDuKien.ToString("dd/MM/yyyy")</td>
                         <td><b>@x.LoaiPhong?.TenLoai</b></td>
-                        <td>@(x.LoaiPhong?.GiaThang.ToString("N0") ?? "-") đ</td>
+                        <td>@(x.LoaiPhong == null ? "-" : x.LoaiPhong.GiaThang.ToString("N0")) đ</td>
                         <td><span class="student-status @statusClass">@statusText</span></td>
                         <td>@(string.IsNullOrWhiteSpace(x.GhiChu) ? "-" : x.GhiChu)</td>
                     </tr>
@@ -142,3 +360,91 @@
         </div>
     }
 </section>
+
+<section class="student-panel history-panel room-history-panel" id="stay-history">
+    <div class="student-panel-title">
+        <div><h2>Lịch sử ở KTX</h2><p>Chỉ hiển thị lịch sử phòng của chính bạn.</p></div>
+        <span class="history-count">@lichSuO.Count lần ở</span>
+    </div>
+    @if (!lichSuO.Any())
+    {
+        <div class="student-empty"><div>🏠</div><b>Chưa có lịch sử ở KTX</b><span>Khi được phân phòng, lịch sử sẽ được ghi nhận tại đây.</span></div>
+    }
+    else
+    {
+        <div class="student-table-wrap">
+            <table class="student-table">
+                <thead><tr><th>Phòng</th><th>Tòa nhà</th><th>Tầng</th><th>Loại phòng</th><th>Ngày bắt đầu</th><th>Ngày kết thúc thực tế</th><th>Trạng thái</th></tr></thead>
+                <tbody>
+                @foreach (var x in lichSuO)
+                {
+                    <tr>
+                        <td><b>@x.PhongKTX?.SoPhong</b></td>
+                        <td>@x.PhongKTX?.ToaNha</td>
+                        <td>@x.PhongKTX?.Tang</td>
+                        <td>@x.PhongKTX?.LoaiPhong?.TenLoai</td>
+                        <td>@x.NgayVao.ToString("dd/MM/yyyy")</td>
+                        <td>@(x.NgayRa.HasValue ? x.NgayRa.Value.ToString("dd/MM/yyyy") : "-")</td>
+                        <td><span class="student-status @(x.NgayRa == null ? "approved" : "rejected")">@(x.NgayRa == null ? "Đang ở" : "Đã rời phòng")</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<style>
+.profile-update-btn{display:inline-flex;margin-top:18px;text-decoration:none;align-items:center;justify-content:center;width:max-content;border:0;cursor:pointer;}
+.profile-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;}
+.profile-form-grid .full-width{grid-column:1/-1;}
+.profile-form-grid input,.profile-form-grid select,.profile-form-grid textarea{width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #dbe3ef;border-radius:10px;background:#fff;font:inherit;}
+.profile-form-grid input:focus,.profile-form-grid select:focus,.profile-form-grid textarea:focus{outline:none;border-color:#4f7cff;box-shadow:0 0 0 3px rgba(79,124,255,.1);}
+.profile-form-grid input[readonly]{background:#f4f6f9;color:#697386;}
+.profile-form-grid small{display:block;margin-top:5px;color:#8a94a6;font-size:12px;}
+.profile-form-actions{display:flex;gap:12px;margin-top:20px;align-items:center;}
+.student-secondary-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 20px;border-radius:10px;text-decoration:none;border:1px solid #dbe3ef;background:#fff;color:#475569;cursor:pointer;}
+.profile-modal{display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;padding:20px;}
+.profile-modal.open{display:flex;}
+.profile-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.58);backdrop-filter:blur(3px);}
+.profile-modal-dialog{position:relative;z-index:1;width:min(900px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:20px;box-shadow:0 25px 70px rgba(15,23,42,.25);padding:26px;}
+.profile-modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:22px;}
+.profile-modal-header h2{margin:0 0 5px;font-size:22px;}
+.profile-modal-header p{margin:0;color:#8a94a6;}
+.profile-modal-close{width:38px;height:38px;border:0;border-radius:10px;background:#f1f5f9;color:#334155;font-size:26px;line-height:1;cursor:pointer;}
+body.modal-open{overflow:hidden;}
+.transfer-panel{margin-top:24px;}
+.transfer-request-card{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:16px 18px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:20px;}
+.transfer-request-card>div{display:flex;flex-direction:column;gap:5px;}
+.transfer-request-card span{color:#64748b;font-size:13px;}
+.transfer-request-card.pending{background:#fffaf0;border-color:#fde68a;}
+.transfer-request-card.approved{background:#f0fdf4;border-color:#bbf7d0;}
+.transfer-request-card.rejected{background:#fef2f2;border-color:#fecaca;}
+.transfer-form{margin-top:5px;}
+.transfer-open-btn{margin-top:8px;}
+.transfer-modal{display:none;position:fixed;inset:0;z-index:10000;align-items:center;justify-content:center;padding:20px;}
+.transfer-modal.open{display:flex;}
+.transfer-modal-backdrop{position:absolute;inset:0;background:rgba(15,23,42,.58);backdrop-filter:blur(3px);}
+.transfer-modal-dialog{position:relative;z-index:1;width:min(760px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:20px;box-shadow:0 25px 70px rgba(15,23,42,.25);padding:26px;}
+.transfer-modal-dialog .profile-form-actions{justify-content:flex-end;}
+body.modal-open{overflow:hidden;}
+
+.pending-registration-card,.student-info-pending{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 16px;border-radius:12px;background:#fffaf0;border:1px solid #fde68a;margin:15px 0;}
+.pending-registration-card div,.student-info-pending{display:flex;flex-direction:column;}
+.pending-registration-card span:not(.student-status),.student-info-pending span{font-size:12px;color:#7b8798;margin-top:4px;}
+.return-panel{margin-top:20px;}
+.return-request-box{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:17px 18px;border:1px solid #e2e8f0;background:#f8fafc;border-radius:14px;}
+.return-request-box strong,.return-request-box span{display:block;}
+.return-request-box strong{font-size:14px;color:#26354b;}
+.return-request-box span{font-size:12px;color:#7d899c;margin-top:4px;}
+.return-request-btn{white-space:nowrap;border-color:#f0b7bf;color:#c53e51;background:#fff7f8;font-weight:700;}
+.return-request-btn:hover{background:#ffecef;border-color:#e58a96;color:#ad2d40;}
+@@media (max-width: 700px){.profile-form-grid{grid-template-columns:1fr;}.profile-form-grid .full-width{grid-column:auto;}.profile-modal-dialog{padding:20px;max-height:94vh;}.transfer-request-card{align-items:flex-start;flex-direction:column;}}
+</style>
+<script>
+function openProfileModal(){const m=document.getElementById('profileModal');if(!m)return;m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');}
+function closeProfileModal(){const m=document.getElementById('profileModal');if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}
+function openTransferModal(){const m=document.getElementById('transferModal');if(!m)return;m.classList.add('open');m.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');}
+function closeTransferModal(){const m=document.getElementById('transferModal');if(!m)return;m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open');}
+document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeProfileModal();closeTransferModal();}});
+</script>

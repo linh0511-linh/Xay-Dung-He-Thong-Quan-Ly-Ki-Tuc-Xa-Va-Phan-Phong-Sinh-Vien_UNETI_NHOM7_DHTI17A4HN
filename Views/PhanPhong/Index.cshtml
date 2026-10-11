@@ -1,8 +1,362 @@
 @model List<QuanLyKyTucXa_UNETIxx_xxx.Models.DangKyKTX>
 @using QuanLyKyTucXa_UNETIxx_xxx.Models
-@{ ViewData["Title"] = "Duyệt và phân phòng"; var phongs = (List<PhongKTX>)ViewBag.Phongs; }
-<h2>DUYỆT VÀ PHÂN PHÒNG</h2>
-<table class="table table-bordered align-middle"><thead><tr><th>Sinh viên</th><th>Loại mong muốn</th><th>Ngày đăng ký</th><th>Phòng</th><th>Thao tác</th></tr></thead><tbody>
-@foreach(var x in Model){<tr><td>@x.SinhVien?.MaSV - @x.SinhVien?.HoTen</td><td>@x.LoaiPhong?.TenLoai</td><td>@x.NgayDangKy.ToString("dd/MM/yyyy")</td><td><form asp-action="Assign" method="post" class="d-flex gap-2">@Html.AntiForgeryToken()<input type="hidden" name="dangKyId" value="@x.Id"/><select name="phongId" class="form-select">@foreach(var p in phongs.Where(p => p.LoaiPhongId == x.LoaiPhongId)){<option value="@p.Id">@p.ToaNha - @p.SoPhong</option>}</select><button class="btn btn-success">Phân</button></form></td><td><form asp-action="Reject" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@x.Id"/><button class="btn btn-outline-danger">Từ chối</button></form></td></tr>}
-</tbody></table>
-@if(!Model.Any()){<div class="alert alert-info">Không có đơn đang chờ duyệt.</div>}
+
+@{
+    ViewData["Title"] = "Duyệt và phân phòng";
+
+    var phongs = ViewBag.Phongs as List<PhongKTX> ?? new List<PhongKTX>();
+    var soNguoiTheoPhong = ViewBag.SoNguoiTheoPhong as Dictionary<int, int>
+                           ?? new Dictionary<int, int>();
+}
+
+<div class="phan-phong-page">
+    <div class="page-header">
+        <div>
+            <h2>Duyệt và phân phòng</h2>
+            <p>Chọn phòng phù hợp để duyệt đơn đăng ký KTX cho sinh viên.</p>
+        </div>
+
+        <button type="button" class="btn-back" onclick="quayLaiTrangTruoc()">
+            ← Quay lại
+        </button>
+    </div>
+
+    @if (TempData["Msg"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Msg"]
+        </div>
+    }
+
+    @if (TempData["Err"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Err"]
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="empty-box">
+            <div class="empty-icon">✓</div>
+            <h4>Không có đơn đang chờ duyệt</h4>
+            <p>Hiện tại chưa có yêu cầu đăng ký KTX nào cần phân phòng.</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Sinh viên</th>
+                            <th>Loại phòng</th>
+                            <th>Ngày đăng ký</th>
+                            <th>Thời gian ở</th>
+                            <th style="min-width: 330px;">Phòng</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    @foreach (var x in Model)
+                    {
+                        // Hiển thị tất cả phòng đúng loại, kể cả phòng đã đầy để admin xem trạng thái.
+                        var phongPhuHop = phongs
+                            .Where(p => p.LoaiPhongId == x.LoaiPhongId && p.LoaiPhong != null)
+                            .ToList();
+                        var coPhongTrong = phongPhuHop.Any(p =>
+                            (soNguoiTheoPhong.TryGetValue(p.Id, out var dangOPhong) ? dangOPhong : 0)
+                            < p.LoaiPhong!.SucChua);
+
+                        <tr>
+                            <td>
+                                <div class="student-name">
+                                    @(x.SinhVien?.HoTen ?? "Không xác định")
+                                </div>
+                                <small class="text-muted">
+                                    @(x.SinhVien?.MaSV ?? "-")
+                                </small>
+                            </td>
+
+                            <td>
+                                <span class="room-type">
+                                    @(x.LoaiPhong?.TenLoai ?? "Không xác định")
+                                </span>
+                            </td>
+
+                            <td>
+                                @x.NgayDangKy.ToString("dd/MM/yyyy HH:mm")
+                            </td>
+
+                            <td>
+                                <div>@x.NgayBatDau.ToString("dd/MM/yyyy")</div>
+                                <small class="text-muted">
+                                    đến @x.NgayKetThucDuKien.ToString("dd/MM/yyyy")
+                                </small>
+                            </td>
+
+                            <td>
+                                @if (phongPhuHop.Any())
+                                {
+                                    @if (!coPhongTrong)
+                                    {
+                                        <div class="no-room room-warning">
+                                            ⚠ Không còn phòng trống đúng loại. Admin có thể chọn phòng đầy và xác nhận phân thủ công vượt sức chứa.
+                                        </div>
+                                    }
+                                    <form asp-controller="PhanPhong" asp-action="AutoAssign" method="post" class="mb-2"
+                                          onsubmit="return confirm('Tự động tìm phòng còn chỗ. Nếu hết phòng đúng loại, hệ thống sẽ gửi đề xuất phòng khác để sinh viên xác nhận. Tiếp tục?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="dangKyId" value="@x.Id" />
+                                        <button type="submit" class="btn btn-primary">⚙ Phân phòng tự động</button>
+                                    </form>
+
+                                    <form asp-controller="PhanPhong"
+                                          asp-action="Assign"
+                                          method="post"
+                                          class="assign-form">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <input type="hidden"
+                                               name="dangKyId"
+                                               value="@x.Id" />
+
+                                        <select name="phongId"
+                                                class="form-select room-select"
+                                                required>
+                                            <option value="">-- Chọn phòng --</option>
+
+                                            @foreach (var p in phongPhuHop)
+                                            {
+                                                var soNguoi = soNguoiTheoPhong.TryGetValue(p.Id, out var n) ? n : 0;
+                                                var sucChua = p.LoaiPhong?.SucChua ?? 0;
+                                                var daDay = soNguoi >= sucChua;
+
+                                                <option value="@p.Id">
+                                                    @p.ToaNha - @p.SoPhong | Tầng @p.Tang
+                                                    | @(daDay ? "ĐÃ ĐẦY" : "CÒN TRỐNG") (@soNguoi/@sucChua người)
+                                                </option>
+                                            }
+                                        </select>
+
+                                        <label class="manual-override">
+                                            <input type="checkbox" name="choPhepVuotSucChua" value="true" />
+                                            Admin xác nhận phân thủ công vào phòng đã đầy (vượt sức chứa)
+                                        </label>
+
+                                        <button type="submit"
+                                                class="btn btn-success assign-btn">
+                                            Phân phòng
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <div class="no-room">
+                                        ⚠ Không có phòng đang hoạt động thuộc loại phòng đã đăng ký. Có thể dùng phân phòng tự động để đề xuất phòng khác còn chỗ cho sinh viên xác nhận.
+                                    </div>
+                                    <form asp-controller="PhanPhong" asp-action="AutoAssign" method="post" class="mb-2"
+                                          onsubmit="return confirm('Không có phòng đúng loại. Hệ thống sẽ tìm phòng khác còn chỗ và gửi đề xuất cho sinh viên xác nhận. Tiếp tục?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="dangKyId" value="@x.Id" />
+                                        <button type="submit" class="btn btn-primary">⚙ Phân phòng tự động</button>
+                                    </form>
+                                }
+                            </td>
+
+                            <td class="text-center">
+                                <form asp-controller="PhanPhong"
+                                      asp-action="Reject"
+                                      method="post"
+                                      onsubmit="return confirm('Bạn có chắc muốn từ chối đơn này?');">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <input type="hidden"
+                                           name="id"
+                                           value="@x.Id" />
+
+                                    <button type="submit"
+                                            class="btn btn-outline-danger">
+                                        Từ chối
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .phan-phong-page {
+        padding: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin-bottom: 22px;
+    }
+
+    .page-header h2 {
+        margin: 0 0 6px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .page-header p {
+        margin: 0;
+        color: #6b7280;
+    }
+
+    .btn-back {
+        text-decoration: none;
+        border: 1px solid #d1d5db;
+        padding: 9px 15px;
+        border-radius: 8px;
+        color: #374151;
+        background: #fff;
+    }
+
+    .btn-back:hover {
+        background: #f3f4f6;
+    }
+
+    .table-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 12px rgba(0,0,0,.05);
+    }
+
+    .table {
+        margin: 0;
+    }
+
+    .table thead th {
+        background: #f8fafc;
+        color: #374151;
+        font-weight: 700;
+        white-space: nowrap;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table td {
+        padding: 14px 12px;
+        vertical-align: middle;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .room-type {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .assign-form {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .room-select {
+        min-width: 235px;
+    }
+
+    .assign-btn {
+        white-space: nowrap;
+    }
+
+    .no-room {
+        color: #b45309;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 8px;
+        padding: 9px 11px;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .manual-override {
+        display: flex;
+        align-items: flex-start;
+        gap: 6px;
+        color: #b45309;
+        font-size: 12px;
+        max-width: 360px;
+        margin: 6px 0;
+    }
+
+    .manual-override input { margin-top: 3px; }
+
+    .empty-box {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        text-align: center;
+        padding: 55px 20px;
+    }
+
+    .empty-icon {
+        width: 48px;
+        height: 48px;
+        line-height: 48px;
+        margin: 0 auto 12px;
+        border-radius: 50%;
+        background: #dcfce7;
+        color: #15803d;
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    @@media (max-width: 900px) {
+        .phan-phong-page {
+            padding: 12px;
+        }
+
+        .page-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .assign-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .room-select {
+            min-width: 100%;
+        }
+    }
+</style>
+
+
+<script>
+    function quayLaiTrangTruoc() {
+        // Trở về đúng trang mà admin vừa đi từ đó, không điều hướng sang trang sinh viên.
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            // Trường hợp mở trực tiếp URL trong tab mới.
+            window.location.href = '/';
+        }
+    }
+</script>

@@ -1,0 +1,76 @@
+@model List<QuanLyKyTucXa_UNETIxx_xxx.Models.PhongKTX>
+@using QuanLyKyTucXa_UNETIxx_xxx.Models
+@{
+    ViewData["Title"] = "Đăng ký chuyển phòng";
+    var sv = (SinhVien)ViewBag.SinhVien;
+    var current = (PhanPhong?)ViewBag.PhongHienTai;
+    var latest = (YeuCauChuyenPhong?)ViewBag.YeuCauGanNhat;
+    var occupancy = (Dictionary<int, int>)ViewBag.Occupancy;
+    var pending = latest?.TrangThai == "ChoDuyet";
+}
+<div class="transfer-page">
+    <div class="transfer-page-hero">
+        <div class="transfer-hero-icon">↔</div>
+        <div><span>CỔNG SINH VIÊN UNETI</span><h1>Đăng ký chuyển phòng</h1><p>Gửi yêu cầu trực tiếp trên website và theo dõi trạng thái xử lý tại đây.</p></div>
+    </div>
+    @if (TempData["Msg"] != null) { <div class="alert alert-success border-0 shadow-sm">@TempData["Msg"]</div> }
+    @if (TempData["Err"] != null) { <div class="alert alert-danger border-0 shadow-sm">@TempData["Err"]</div> }
+    <div class="transfer-current-card">
+        <div><span class="transfer-muted-label">SINH VIÊN</span><h3>@sv.HoTen</h3><p class="mb-0">@sv.MaSV · @(sv.Lop ?? "Chưa cập nhật") · @(sv.Khoa ?? "Chưa cập nhật")</p></div>
+        <div class="transfer-current-room"><span>PHÒNG HIỆN TẠI</span><strong>@(current == null ? "Chưa được phân phòng" : $"Tòa {current.PhongKTX?.ToaNha} · Phòng {current.PhongKTX?.SoPhong}")</strong><small>@(current?.PhongKTX?.LoaiPhong?.TenLoai ?? "Bạn cần có phòng hiện tại để đăng ký chuyển.")</small></div>
+    </div>
+
+    @if (latest != null)
+    {
+        <div class="transfer-status-card @(latest.TrangThai == "DaDuyet" ? "is-approved" : latest.TrangThai == "TuChoi" ? "is-rejected" : "is-pending")">
+            <div><span class="transfer-muted-label">YÊU CẦU GẦN NHẤT</span><h3>Phòng @latest.PhongHienTai?.SoPhong → Phòng @latest.PhongMuonDen?.SoPhong</h3><p>@(latest.LyDo ?? "Không có lý do") · @latest.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")</p></div>
+            <span class="transfer-status-pill">@(latest.TrangThai == "DaDuyet" ? "Đã duyệt" : latest.TrangThai == "TuChoi" ? "Từ chối" : "Chờ duyệt")</span>
+        </div>
+    }
+
+    <div class="transfer-content-grid">
+        <section class="transfer-form-card">
+            <div class="transfer-section-title"><div><span class="transfer-muted-label">YÊU CẦU MỚI</span><h2>Chọn phòng muốn chuyển đến</h2><p>Chỉ gửi yêu cầu khi phòng còn chỗ.</p></div><span>✦</span></div>
+            @if (current == null)
+            {
+                <div class="alert alert-warning">Bạn chưa được phân phòng nên không thể đăng ký chuyển phòng.</div>
+            }
+            else if (pending)
+            {
+                <div class="transfer-no-room"><span>⏳</span><h3>Yêu cầu đang chờ xử lý</h3><p>Bạn đã gửi một yêu cầu chuyển phòng. Vui lòng chờ Admin phản hồi trước khi gửi yêu cầu mới.</p></div>
+            }
+            else if (!Model.Any(r => occupancy.GetValueOrDefault(r.Id) < (r.LoaiPhong?.SucChua ?? 0)))
+            {
+                <div class="transfer-no-room"><span>🏠</span><h3>Chưa có phòng phù hợp còn chỗ</h3><p>Hiện chưa có phòng hoạt động nào có thể nhận thêm sinh viên.</p></div>
+            }
+            else
+            {
+                <form asp-action="Request" method="post" class="transfer-direct-form">
+                    @Html.AntiForgeryToken()
+                    <label for="phongMuonDenId">Phòng muốn chuyển đến</label>
+                    <select id="phongMuonDenId" name="phongMuonDenId" required>
+                        <option value="">-- Chọn phòng còn chỗ --</option>
+                        @foreach (var room in Model)
+                        {
+                            var count = occupancy.GetValueOrDefault(room.Id);
+                            var free = (room.LoaiPhong?.SucChua ?? 0) - count;
+                            if (free > 0)
+                            {
+                                <option value="@room.Id">Tòa @room.ToaNha · Phòng @room.SoPhong — @room.LoaiPhong?.TenLoai · Còn @free chỗ (@count/@room.LoaiPhong?.SucChua)</option>
+                            }
+                        }
+                    </select>
+                    <label for="lyDo">Lý do chuyển phòng</label>
+                    <textarea id="lyDo" name="lyDo" rows="4" maxlength="500" placeholder="Ví dụ: cần chuyển gần lớp học, muốn ở cùng nhóm bạn..."></textarea>
+                    <button type="submit" class="transfer-submit-btn" onclick="return confirm('Gửi yêu cầu chuyển phòng để Admin xem xét?')">Gửi yêu cầu chuyển phòng <span>→</span></button>
+                </form>
+            }
+        </section>
+        <aside class="transfer-help-card">
+            <h3>Quy trình xử lý</h3>
+            <div class="transfer-step"><b>1</b><div><strong>Chọn phòng</strong><p>Chọn một phòng đang hoạt động và còn chỗ.</p></div></div>
+            <div class="transfer-step"><b>2</b><div><strong>Gửi yêu cầu</strong><p>Yêu cầu được lưu trực tiếp trên hệ thống KTX.</p></div></div>
+            <div class="transfer-step"><b>3</b><div><strong>Admin xét duyệt</strong><p>Bạn tiếp tục ở phòng hiện tại cho đến khi yêu cầu được duyệt.</p></div></div>
+        </aside>
+    </div>
+</div>

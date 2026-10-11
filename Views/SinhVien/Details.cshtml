@@ -1,0 +1,31 @@
+@model QuanLyKyTucXa_UNETIxx_xxx.Models.SinhVien
+@{ ViewData["Title"] = "Thông tin sinh viên"; }
+
+<div class="page-head">
+    <div>
+        <h1>Thông tin sinh viên</h1>
+        <p>Chi tiết đầy đủ thông tin của sinh viên.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">← Quay lại</a>
+</div>
+
+<div class="panel">
+    <div class="row g-3">
+        <div class="col-md-6"><div class="detail-item"><strong>Mã sinh viên</strong><div>@Model.MaSV</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Mã tài khoản</strong><div>@Model.TaiKhoanId</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Họ tên</strong><div>@Model.HoTen</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Ngày sinh</strong><div>@Model.NgaySinh.ToString("dd/MM/yyyy")</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Giới tính</strong><div>@Model.GioiTinh</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Lớp</strong><div>@(Model.Lop ?? "Chưa cập nhật")</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Khoa</strong><div>@(Model.Khoa ?? "Chưa cập nhật")</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Số điện thoại</strong><div>@(Model.SoDienThoai ?? "Chưa cập nhật")</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Email</strong><div>@(Model.Email ?? "Chưa cập nhật")</div></div></div>
+        <div class="col-md-6"><div class="detail-item"><strong>Địa chỉ</strong><div>@(Model.DiaChi ?? "Chưa cập nhật")</div></div></div>
+    </div>
+</div>
+
+<style>
+.detail-item { background:#f8fafc; border:1px solid #e5e7eb; border-radius:12px; padding:16px 18px; height:100%; }
+.detail-item strong { display:block; color:#64748b; font-size:13px; margin-bottom:6px; }
+.detail-item div { color:#1e293b; font-weight:600; }
+</style>

@@ -1,4 +1,25 @@
 @model List<QuanLyKyTucXa_UNETIxx_xxx.Models.PhanPhong>
 @using QuanLyKyTucXa_UNETIxx_xxx.Models
-@{ ViewData["Title"]="Chuyển phòng"; var rooms=(List<PhongKTX>)ViewBag.Phongs; }
-<div class="page-head"><div><h1>Chuyển phòng</h1><p>Thực hiện chuyển sinh viên sang phòng khác.</p></div></div><div class="panel"><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Sinh viên</th><th>Phòng hiện tại</th><th>Ngày vào</th><th>Phòng mới</th><th></th></tr></thead><tbody>@foreach(var x in Model){<tr><td><b>@x.SinhVien?.MaSV</b><br/>@x.SinhVien?.HoTen</td><td>Tòa @x.PhongKTX?.ToaNha - @x.PhongKTX?.SoPhong</td><td>@x.NgayVao.ToString("dd/MM/yyyy")</td><td><form asp-action="Move" method="post" class="d-flex gap-2">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@x.Id"/><select name="phongId" class="form-select form-select-sm">@foreach(var p in rooms.Where(r=>r.Id!=x.PhongKTXId)){<option value="@p.Id">@p.ToaNha - @p.SoPhong (@p.LoaiPhong?.TenLoai)</option>}</select><button class="btn btn-sm btn-primary">Chuyển</button></form></td><td></td></tr>}</tbody></table></div></div>
+@{ ViewData["Title"]="Chuyển phòng"; var rooms=(List<PhongKTX>)ViewBag.Phongs; var requests=(List<YeuCauChuyenPhong>)ViewBag.YeuCau; }
+<div class="page-head"><div><h1>Chuyển phòng</h1><p>Quản lý chuyển phòng và xử lý yêu cầu chuyển phòng của sinh viên.</p></div></div>
+@if (TempData["Msg"] != null) { <div class="alert alert-success">@TempData["Msg"]</div> }
+@if (TempData["Err"] != null) { <div class="alert alert-danger">@TempData["Err"]</div> }
+
+<div class="panel" style="margin-bottom:24px;">
+    <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="mb-0">Yêu cầu chuyển phòng của sinh viên</h3><span class="badge bg-warning text-dark">@requests.Count chờ duyệt</span></div>
+    @if (!requests.Any())
+    {
+        <div class="text-muted py-3">Hiện không có yêu cầu chuyển phòng nào đang chờ duyệt.</div>
+    }
+    else
+    {
+        <div class="table-responsive"><table class="table align-middle"><thead><tr><th>Sinh viên</th><th>Phòng hiện tại</th><th>Phòng muốn chuyển</th><th>Lý do</th><th>Ngày gửi</th><th>Thao tác</th></tr></thead><tbody>
+        @foreach (var r in requests)
+        {
+            <tr><td><b>@r.SinhVien?.MaSV</b><br/>@r.SinhVien?.HoTen</td><td>Tòa @r.PhongHienTai?.ToaNha - @r.PhongHienTai?.SoPhong</td><td>Tòa @r.PhongMuonDen?.ToaNha - @r.PhongMuonDen?.SoPhong</td><td>@(string.IsNullOrWhiteSpace(r.LyDo) ? "-" : r.LyDo)</td><td>@r.NgayYeuCau.ToString("dd/MM/yyyy HH:mm")</td><td><div class="d-flex gap-2"><form asp-action="ApproveRequest" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@r.Id"/><button class="btn btn-sm btn-success">Duyệt</button></form><form asp-action="RejectRequest" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@r.Id"/><button class="btn btn-sm btn-outline-danger">Từ chối</button></form></div></td></tr>
+        }
+        </tbody></table></div>
+    }
+</div>
+
+<div class="panel"><h3 class="mb-3">Phân phòng hiện tại</h3><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Sinh viên</th><th>Phòng hiện tại</th><th>Ngày vào</th><th>Phòng mới</th><th></th></tr></thead><tbody>@foreach(var x in Model){<tr><td><b>@x.SinhVien?.MaSV</b><br/>@x.SinhVien?.HoTen</td><td>Tòa @x.PhongKTX?.ToaNha - @x.PhongKTX?.SoPhong</td><td>@x.NgayVao.ToString("dd/MM/yyyy")</td><td><form asp-action="Move" method="post" class="d-flex gap-2">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@x.Id"/><select name="phongId" class="form-select form-select-sm">@foreach(var p in rooms.Where(r=>r.Id!=x.PhongKTXId)){<option value="@p.Id">@p.ToaNha - @p.SoPhong (@p.LoaiPhong?.TenLoai)</option>}</select><button class="btn btn-sm btn-primary">Chuyển</button></form></td><td></td></tr>}</tbody></table></div></div>

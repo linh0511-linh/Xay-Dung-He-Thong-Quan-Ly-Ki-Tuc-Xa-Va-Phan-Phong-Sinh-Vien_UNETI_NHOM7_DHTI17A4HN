@@ -1,4 +1,63 @@
 @model List<QuanLyKyTucXa_UNETIxx_xxx.Models.SinhVien>
-@{ ViewData["Title"]="Sinh viên"; }
-<div class="page-head"><div><h1>Quản lý sinh viên</h1><p>Danh sách sinh viên và tình trạng ở ký túc xá.</p></div></div>
-<div class="panel"><form class="search-row" method="get"><input name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm mã sinh viên hoặc họ tên..."/><button class="btn btn-primary">Tìm kiếm</button></form><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Mã SV</th><th>Họ tên</th><th>Giới tính</th><th>Email</th><th>Phòng hiện tại</th><th>Tài khoản</th></tr></thead><tbody>@foreach(var x in Model){var o=x.PhanPhongs.FirstOrDefault(p=>p.NgayRa==null);<tr><td><b>@x.MaSV</b></td><td>@x.HoTen</td><td>@x.GioiTinh</td><td>@x.Email</td><td>@(o?.PhongKTX==null?"Chưa phân":$"Tòa {o.PhongKTX.ToaNha} - {o.PhongKTX.SoPhong}")</td><td>@x.TaiKhoan?.TenDangNhap</td></tr>}</tbody></table></div></div>
+@{ ViewData["Title"] = "Sinh viên"; }
+
+<div class="page-head">
+    <div>
+        <h1>Quản lý sinh viên</h1>
+        <p>Danh sách sinh viên và tình trạng ở ký túc xá.</p>
+    </div>
+</div>
+
+<div class="panel">
+    <form class="search-row" method="get">
+        <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm mã sinh viên hoặc họ tên..." />
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Mã SV</th>
+                    <th>Họ tên</th>
+                    <th>Giới tính</th>
+                    <th>Email</th>
+                    <th>Phòng hiện tại</th>
+                    <th>Tài khoản</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Không có sinh viên phù hợp.</td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var x in Model)
+                    {
+                        var phong = x.PhanPhongs.FirstOrDefault(p => p.NgayRa == null);
+                        <tr>
+                            <td><strong>@x.MaSV</strong></td>
+                            <td>@x.HoTen</td>
+                            <td>@x.GioiTinh</td>
+                            <td>@(string.IsNullOrWhiteSpace(x.Email) ? "—" : x.Email)</td>
+                            <td>
+                                @(phong?.PhongKTX == null
+                                    ? "Chưa phân"
+                                    : $"Tòa {phong.PhongKTX.ToaNha} - {phong.PhongKTX.SoPhong}")
+                            </td>
+                            <td>@(x.TaiKhoan?.TenDangNhap ?? "—")</td>
+                            <td>
+                                <a asp-controller="SinhVien" asp-action="Details" asp-route-id="@x.Id"
+                                   class="btn btn-sm btn-primary">Xem</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
