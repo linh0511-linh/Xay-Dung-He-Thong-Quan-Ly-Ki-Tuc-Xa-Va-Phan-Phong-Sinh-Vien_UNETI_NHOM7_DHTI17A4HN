@@ -16,30 +16,54 @@
         <div class="room-occupancy-card">
             <span>Sĩ số hiện tại</span>
             <strong>@occupied <small>/ @capacity</small></strong>
-            <div class="progress mt-2" style="height:8px"><div class="progress-bar @(occupied >= capacity ? "bg-danger" : "bg-primary")" style="width:@(capacity <= 0 ? 0 : Math.Min(100, occupied * 100 / capacity))%"></div></div>
+            <div class="progress mt-2" style="height:8px">
+                <div class="progress-bar @(occupied >= capacity ? "bg-danger" : "bg-primary")" style="width:@(capacity <= 0 ? 0 : Math.Min(100, occupied * 100 / capacity))%"></div></div>
             <small class="text-secondary">Còn @Math.Max(0, capacity - occupied) chỗ trống</small>
         </div>
     </div>
 </div>
 <div class="panel room-students-panel mt-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-        <div><h3 class="mb-1">Sinh viên đang ở</h3><p class="text-secondary mb-0">Danh sách cập nhật từ các lượt phân phòng còn hiệu lực.</p></div>
+        <div>
+            <h3 class="mb-1">Sinh viên đang ở</h3>
+            <p class="text-secondary mb-0">Danh sách cập nhật từ các lượt phân phòng còn hiệu lực.</p></div>
+
         <span class="badge rounded-pill text-bg-primary px-3 py-2">@Model.Count sinh viên</span>
     </div>
     @if (!Model.Any())
     {
-        <div class="room-empty-state"><div>🏠</div><h4>Phòng hiện chưa có sinh viên</h4><p class="text-secondary mb-0">Khi sinh viên được phân vào phòng này, thông tin sẽ hiển thị tại đây.</p></div>
+        <div class="room-empty-state"><div>🏠</div>
+        <h4>Phòng hiện chưa có sinh viên</h4>
+        <p class="text-secondary mb-0">Khi sinh viên được phân vào phòng này, thông tin sẽ hiển thị tại đây.</p></div>
     }
     else
     {
         <div class="table-responsive">
             <table class="table align-middle room-students-table">
-                <thead><tr><th>#</th><th>Mã sinh viên</th><th>Họ và tên</th><th>Lớp</th><th>Khoa</th><th>Email</th><th>Số điện thoại</th><th>Ngày vào</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Mã sinh viên</th>
+                        <th>Họ và tên</th>
+                        <th>Lớp</th>
+                        <th>Khoa</th>
+                        <th>Email</th>
+                        <th>Số điện thoại</th>
+                        <th>Ngày vào</th>
+                    </tr>
+                </thead>
                 <tbody>
                 @for (int i = 0; i < Model.Count; i++)
                 {
                     var item = Model[i]; var sv = item.SinhVien;
-                    <tr><td>@(i + 1)</td><td><span class="student-code">@sv?.MaSV</span></td><td><strong>@sv?.HoTen</strong></td><td>@(sv?.Lop ?? "—")</td><td>@(sv?.Khoa ?? "—")</td><td>@(sv?.Email ?? "—")</td><td>@(sv?.SoDienThoai ?? "—")</td><td>@item.NgayVao.ToString("dd/MM/yyyy")</td></tr>
+                    <tr>
+                        <td>@(i + 1)</td><td><span class="student-code">@sv?.MaSV</span></td>
+                        <td><strong>@sv?.HoTen</strong></td><td>@(sv?.Lop ?? "—")</td>
+                        <td>@(sv?.Khoa ?? "—")</td>
+                        <td>@(sv?.Email ?? "—")</td>
+                        <td>@(sv?.SoDienThoai ?? "—")</td>
+                        <td>@item.NgayVao.ToString("dd/MM/yyyy")</td>
+                        </tr>
                 }
                 </tbody>
             </table>
