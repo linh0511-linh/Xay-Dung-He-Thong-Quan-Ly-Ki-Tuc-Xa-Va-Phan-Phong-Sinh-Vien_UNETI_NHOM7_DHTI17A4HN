@@ -7,28 +7,39 @@ using QuanLyKyTucXa_UNETIxx_xxx.ViewModels;
 
 namespace QuanLyKyTucXa_UNETIxx_xxx.Controllers;
 
-[SessionAuthorize("Admin")]
+[SessionAuthorize("Admin")] // Admin được vào controller này
 public class PhongKTXController : Controller
 {
     private readonly KtxDbContext _db;
     private const int PageSize = 10;
     public PhongKTXController(KtxDbContext db) => _db = db;
 
+    // Danh sách phòng: tìm, lọc, sắp xếp, phân tran
     public async Task<IActionResult> Index(string? search, int? loaiPhongId, string? sort, int page = 1)
     {
         page = Math.Max(1, page);
         var q = _db.PhongKTXs.Include(p => p.LoaiPhong).AsQueryable();
+
+        // Tìm kiếm theo số phòng hoặc tòa nhà
         if (!string.IsNullOrWhiteSpace(search)) q = q.Where(p => p.SoPhong.Contains(search) || p.ToaNha.Contains(search));
+
+        // Lọc theo loại phòng
         if (loaiPhongId.HasValue) q = q.Where(p => p.LoaiPhongId == loaiPhongId.Value);
+
+        // Sắp xếp
         q = sort switch
         {
             "phong_desc" => q.OrderByDescending(p => p.SoPhong),
             "toa" => q.OrderBy(p => p.ToaNha).ThenBy(p => p.SoPhong),
             _ => q.OrderBy(p => p.SoPhong)
         };
+
+        // tổng số trang
         var total = await q.CountAsync();
         var totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)PageSize));
         page = Math.Min(page, totalPages);
+
+        // Phân trang và đóng gói dữ liệu gửi sang View
         var vm = new PhongListViewModel
         {
             Search = search, LoaiPhongId = loaiPhongId, Sort = sort, Page = page,
@@ -56,6 +67,7 @@ public class PhongKTXController : Controller
         return View(vm);
     }
 
+    // Xem sinh viên đang ở trong phòng
     [HttpGet]
     public async Task<IActionResult> Students(int id)
     {
@@ -76,6 +88,7 @@ public class PhongKTXController : Controller
         return View(students);
     }
 
+    // Thêm phòng
     [HttpGet]
     public async Task<IActionResult> Create()
     {
@@ -100,6 +113,7 @@ public class PhongKTXController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Sửa phòng
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
@@ -127,6 +141,7 @@ public class PhongKTXController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    // Xóa phòng
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
