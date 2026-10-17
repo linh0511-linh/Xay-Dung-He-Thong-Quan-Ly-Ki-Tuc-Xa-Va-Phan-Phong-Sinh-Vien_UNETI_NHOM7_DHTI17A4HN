@@ -102,12 +102,21 @@
                             </td>
 
                             <td>
-                                <a asp-controller="SinhVien"
-                                   asp-action="Details"
-                                   asp-route-id="@x.Id"
-                                   class="btn btn-sm btn-primary">
-                                    Xem
-                                </a>
+                                <div class="d-flex gap-2">
+                                    <a asp-controller="SinhVien"
+                                       asp-action="Details"
+                                       asp-route-id="@x.Id"
+                                       class="btn btn-sm btn-primary">
+                                        Xem
+                                    </a>
+
+                                    <a asp-controller="SinhVien"
+                                       asp-action="Edit"
+                                       asp-route-id="@x.Id"
+                                       class="btn btn-sm btn-warning">
+                                        Sửa
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                     }

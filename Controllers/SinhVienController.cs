@@ -106,7 +106,6 @@ public class SinhVienController : Controller
 
         try
         {
-            // Tạo tài khoản sinh viên
             var taiKhoan = new TaiKhoan
             {
                 TenDangNhap = tenDangNhap,
@@ -120,7 +119,6 @@ public class SinhVienController : Controller
             _db.TaiKhoans.Add(taiKhoan);
             await _db.SaveChangesAsync();
 
-            // Tạo hồ sơ sinh viên liên kết với tài khoản
             var sinhVien = new SinhVien
             {
                 MaSV = maSV,
@@ -166,6 +164,114 @@ public class SinhVienController : Controller
             ModelState.AddModelError(
                 string.Empty,
                 "Đã xảy ra lỗi khi thêm sinh viên. Vui lòng thử lại.");
+
+            return View(vm);
+        }
+    }
+
+    // Hiển thị biểu mẫu sửa sinh viên
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var sinhVien = await _db.SinhViens
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (sinhVien == null)
+            return NotFound();
+
+        var vm = new SuaSinhVienViewModel
+        {
+            Id = sinhVien.Id,
+            MaSV = sinhVien.MaSV,
+            HoTen = sinhVien.HoTen,
+            NgaySinh = sinhVien.NgaySinh,
+            GioiTinh = sinhVien.GioiTinh,
+            Lop = sinhVien.Lop,
+            Khoa = sinhVien.Khoa,
+            Email = sinhVien.Email,
+            SoDienThoai = sinhVien.SoDienThoai,
+            DiaChi = sinhVien.DiaChi
+        };
+
+        return View(vm);
+    }
+
+    // Xử lý cập nhật thông tin sinh viên
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(
+        int id, SuaSinhVienViewModel vm)
+    {
+        if (id != vm.Id)
+            return BadRequest();
+
+        if (!ModelState.IsValid)
+            return View(vm);
+
+        if (vm.NgaySinh.Date > DateTime.Today)
+        {
+            ModelState.AddModelError(
+                nameof(vm.NgaySinh),
+                "Ngày sinh không được ở tương lai.");
+        }
+
+        if (vm.GioiTinh != "Nam" &&
+            vm.GioiTinh != "Nữ" &&
+            vm.GioiTinh != "Khác")
+        {
+            ModelState.AddModelError(
+                nameof(vm.GioiTinh),
+                "Giới tính không hợp lệ.");
+        }
+
+        var maSV = vm.MaSV.Trim();
+
+        if (await _db.SinhViens.AnyAsync(
+                x => x.MaSV == maSV && x.Id != id))
+        {
+            ModelState.AddModelError(
+                nameof(vm.MaSV),
+                "Mã sinh viên đã được sử dụng.");
+        }
+
+        if (!ModelState.IsValid)
+            return View(vm);
+
+        var sinhVien = await _db.SinhViens
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (sinhVien == null)
+            return NotFound();
+
+        sinhVien.MaSV = maSV;
+        sinhVien.HoTen = vm.HoTen.Trim();
+        sinhVien.NgaySinh = vm.NgaySinh;
+        sinhVien.GioiTinh = vm.GioiTinh;
+        sinhVien.Lop = string.IsNullOrWhiteSpace(vm.Lop)
+            ? null : vm.Lop.Trim();
+        sinhVien.Khoa = string.IsNullOrWhiteSpace(vm.Khoa)
+            ? null : vm.Khoa.Trim();
+        sinhVien.Email = string.IsNullOrWhiteSpace(vm.Email)
+            ? null : vm.Email.Trim();
+        sinhVien.SoDienThoai =
+            string.IsNullOrWhiteSpace(vm.SoDienThoai)
+                ? null : vm.SoDienThoai.Trim();
+        sinhVien.DiaChi = string.IsNullOrWhiteSpace(vm.DiaChi)
+            ? null : vm.DiaChi.Trim();
+
+        try
+        {
+            await _db.SaveChangesAsync();
+
+            TempData["Msg"] = "Cập nhật sinh viên thành công.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "Không thể cập nhật dữ liệu. Vui lòng kiểm tra lại.");
 
             return View(vm);
         }
