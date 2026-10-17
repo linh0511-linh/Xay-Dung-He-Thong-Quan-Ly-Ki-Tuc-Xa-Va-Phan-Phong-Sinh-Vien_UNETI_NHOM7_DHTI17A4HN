@@ -1,17 +1,48 @@
+
 @model List<QuanLyKyTucXa_UNETIxx_xxx.Models.SinhVien>
-@{ ViewData["Title"] = "Sinh viên"; }
+
+@{
+    ViewData["Title"] = "Sinh viên";
+}
 
 <div class="page-head">
     <div>
         <h1>Quản lý sinh viên</h1>
         <p>Danh sách sinh viên và tình trạng ở ký túc xá.</p>
     </div>
+
+    <div>
+        <a asp-controller="SinhVien"
+           asp-action="Create"
+           class="btn btn-primary">
+            + Thêm sinh viên
+        </a>
+    </div>
 </div>
 
 <div class="panel">
-    <form class="search-row" method="get">
-        <input name="search" value="@ViewBag.Search" class="form-control" placeholder="Tìm mã sinh viên hoặc họ tên..." />
-        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+    <form asp-controller="SinhVien"
+          asp-action="Index"
+          method="get"
+          class="search-row">
+
+        <input name="search"
+               value="@ViewBag.Search"
+               class="form-control"
+               placeholder="Tìm mã sinh viên hoặc họ tên..." />
+
+        <button type="submit" class="btn btn-primary">
+            Tìm kiếm
+        </button>
+
+        @if (!string.IsNullOrWhiteSpace(ViewBag.Search as string))
+        {
+            <a asp-controller="SinhVien"
+               asp-action="Index"
+               class="btn btn-secondary">
+                Xóa tìm kiếm
+            </a>
+        }
     </form>
 
     <div class="table-responsive">
@@ -27,32 +58,56 @@
                     <th>Thao tác</th>
                 </tr>
             </thead>
+
             <tbody>
-                @if (!Model.Any())
+                @if (Model == null || !Model.Any())
                 {
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Không có sinh viên phù hợp.</td>
+                        <td colspan="7"
+                            class="text-center text-muted py-4">
+                            Không có sinh viên phù hợp.
+                        </td>
                     </tr>
                 }
                 else
                 {
                     foreach (var x in Model)
                     {
-                        var phong = x.PhanPhongs.FirstOrDefault(p => p.NgayRa == null);
+                        var phong = x.PhanPhongs?
+                            .FirstOrDefault(p => p.NgayRa == null);
+
                         <tr>
-                            <td><strong>@x.MaSV</strong></td>
+                            <td>
+                                <strong>@x.MaSV</strong>
+                            </td>
+
                             <td>@x.HoTen</td>
+
                             <td>@x.GioiTinh</td>
-                            <td>@(string.IsNullOrWhiteSpace(x.Email) ? "—" : x.Email)</td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(x.Email)
+                                    ? "—"
+                                    : x.Email)
+                            </td>
+
                             <td>
                                 @(phong?.PhongKTX == null
                                     ? "Chưa phân"
                                     : $"Tòa {phong.PhongKTX.ToaNha} - {phong.PhongKTX.SoPhong}")
                             </td>
-                            <td>@(x.TaiKhoan?.TenDangNhap ?? "—")</td>
+
                             <td>
-                                <a asp-controller="SinhVien" asp-action="Details" asp-route-id="@x.Id"
-                                   class="btn btn-sm btn-primary">Xem</a>
+                                @(x.TaiKhoan?.TenDangNhap ?? "—")
+                            </td>
+
+                            <td>
+                                <a asp-controller="SinhVien"
+                                   asp-action="Details"
+                                   asp-route-id="@x.Id"
+                                   class="btn btn-sm btn-primary">
+                                    Xem
+                                </a>
                             </td>
                         </tr>
                     }
