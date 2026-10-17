@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace QuanLyKyTucXa_UNETIxx_xxx.Models;
 
@@ -14,7 +15,10 @@ public class TaiKhoan
     public string MatKhauHash { get; set; } = "";
 
     [Required]
-    public string VaiTro { get; set; } = "SinhVien";   // "Admin" hoặc "SinhVien"
+    public string VaiTro { get; set; } = "SinhVien";
+
+    // Tài khoản có thể bị khóa nhưng vẫn giữ lại lịch sử.
+    public bool DangHoatDong { get; set; } = true;
 
     public SinhVien? SinhVien { get; set; }
 }

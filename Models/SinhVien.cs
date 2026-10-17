@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace QuanLyKyTucXa_UNETIxx_xxx.Models;
 
@@ -18,6 +19,15 @@ public class SinhVien
 
     [DataType(DataType.Date)]
     public DateTime NgaySinh { get; set; }
+
+    [StringLength(100)]
+    public string? Lop { get; set; }
+
+    [StringLength(100)]
+    public string? Khoa { get; set; }
+
+    [StringLength(250)]
+    public string? DiaChi { get; set; }
 
     [EmailAddress(ErrorMessage = "Email không hợp lệ")]
     public string? Email { get; set; }
